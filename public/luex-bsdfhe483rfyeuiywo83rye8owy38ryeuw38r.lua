@@ -1,7 +1,9 @@
-
--- Luex UI (Enhanced) | Aesthetic red-black translucent UI, draggable, minimize-to-logo
--- SAFE: purely client UI + local animations
--- WIDE VERSION with Player Target Selection and Auto Kill Selected
+--[[
+Luex UI (Enhanced) | Aesthetic red-black translucent UI, draggable, minimize-to-logo
+SAFE: purely client UI + local animations
+WIDE VERSION with Player Target Selection and Auto Kill Selected
+thank for using 
+]]
 
 
 local Players = game:GetService("Players")
