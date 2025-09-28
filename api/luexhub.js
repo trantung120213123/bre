@@ -10,7 +10,7 @@ export default function handler(req, res) {
     res.end();
   } else {
     // Browser -> redirect UI
-    res.writeHead(302, { Location: "/scriptluex.html" });
+    res.writeHead(302, { Location: "/luex" });
     res.end();
   }
 }
