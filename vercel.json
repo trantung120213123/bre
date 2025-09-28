@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/api/check" },
-    { "source": "/luex", "destination": "/scriptluex.html" }
+    { "source": "/luex", "destination": "/scriptluex.html" },
+    { "source": "/downloadvolcano", "destination": "/downloadvolcano.html" }
   ]
 }
