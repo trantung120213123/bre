@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuexTeam</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    /* Smooth tab transition */
+    .tab-content {
+      transition: all 0.3s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="p-6 text-center">
+    <h1 class="text-4xl font-bold tracking-tight text-red-500 hover:text-red-400 transition-colors duration-300 cursor-pointer" onclick="window.location.href='index.html'">
+      LuexTeam
+    </h1>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col items-center justify-center p-6">
+    <!-- Tab Navigation -->
+    <div class="w-full max-w-md mb-8">
+      <div class="flex justify-center space-x-4 border-b-2 border-gray-700">
+        <button class="tab-btn px-4 py-2 text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="script">Script Luex</button>
+        <button class="tab-btn px-4 py-2 text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="download">Download Volcano</button>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tab-content" class="w-full max-w-md">
+      <!-- Script Luex Tab -->
+      <div id="script" class="tab-content hidden animate-fadeIn">
+        <div class="bg-gray-800 bg-opacity-50 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+          <h2 class="text-2xl font-semibold mb-4 text-center">Script Luex</h2>
+          <p class="text-gray-300 mb-6 text-center">Truy cập Script Luex để trải nghiệm các tính năng độc đáo!</p>
+          <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-300" onclick="confirmLuex()">
+            Vào Script Luex
+          </button>
+        </div>
+      </div>
+
+      <!-- Download Volcano Tab -->
+      <div id="download" class="tab-content hidden animate-fadeIn">
+        <div class="bg-gray-800 bg-opacity-50 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+          <h2 class="text-2xl font-semibold mb-4 text-center">Download Volcano</h2>
+          <p class="text-gray-300 mb-6 text-center">Tải xuống Volcano để bắt đầu hành trình của bạn!</p>
+          <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-300" onclick="window.location.href='/downloadvolcano.html'">
+            Tải Volcano
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="p-4 text-center text-gray-400 text-sm">
+    &copy; 2025 LuexTeam. All rights reserved.
+  </footer>
+
+  <script>
+    // Tab switching logic
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active state from all buttons
+        tabButtons.forEach(btn => {
+          btn.classList.remove('text-red-500', 'border-red-500');
+          btn.classList.add('text-gray-300', 'border-transparent');
+        });
+        // Add active state to clicked button
+        button.classList.add('text-red-500', 'border-red-500');
+        button.classList.remove('text-gray-300');
+
+        // Hide all tab contents
+        tabContents.forEach(content => content.classList.add('hidden'));
+
+        // Show the selected tab content
+        const tabId = button.getAttribute('data-tab');
+        document.getElementById(tabId).classList.remove('hidden');
+      });
+    });
+
+    // Show the first tab by default
+    document.querySelector('.tab-btn[data-tab="script"]').click();
+
+    // Confirm dialog for Script Luex
+    function confirmLuex() {
+      if (confirm("Bạn có chắc muốn vào Script Luex không?")) {
+        window.location.href = "/scriptluex";
+      }
+    }
+  </script>
+</body>
+</html>
