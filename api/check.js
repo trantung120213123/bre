@@ -6,7 +6,7 @@ export default function handler(req, res) {
 
   if (!isBrowser) {
     // Executor -> redirect script .lua
-    res.writeHead(302, { Location: "https://youwanana.onrender.com/luex.lua" });
+    res.writeHead(302, { Location: "https://luexteamscript.vercel.app/luex.lua" });
     res.end();
   } else {
     // Browser -> redirect UI
