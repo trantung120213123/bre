@@ -19,6 +19,21 @@
     .tab-content {
       transition: all 0.3s ease-in-out;
     }
+    /* Custom scrollbar for game list */
+    .game-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .game-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    .game-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+    .game-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
   </style>
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white min-h-screen flex flex-col">
@@ -30,13 +45,14 @@
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 flex flex-col items-center justify-center p-6">
+  <main class="flex-1 flex flex-col items-center justify-center p-4 md:p-6">
     <!-- Tab Navigation -->
-    <div class="w-full max-w-md mb-8">
-      <div class="flex justify-center space-x-4 border-b-2 border-gray-700">
-        <button class="tab-btn px-4 py-2 text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="script">Script Luex</button>
-        <button class="tab-btn px-4 py-2 text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="download">Download Volcano</button>
-        <button class="tab-btn px-4 py-2 text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="dovi">Dovi Hub Script</button>
+    <div class="w-full max-w-md mb-6 md:mb-8">
+      <div class="flex flex-wrap justify-center gap-2 md:gap-4 border-b-2 border-gray-700 pb-2">
+        <button class="tab-btn px-3 py-2 text-sm md:text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="script">Script Luex</button>
+        <button class="tab-btn px-3 py-2 text-sm md:text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="download">Download Volcano</button>
+        <button class="tab-btn px-3 py-2 text-sm md:text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="dovi">Dovi Hub Script</button>
+        <button class="tab-btn px-3 py-2 text-sm md:text-lg font-semibold text-gray-300 hover:text-red-500 border-b-4 border-transparent hover:border-red-500 transition-all duration-300" data-tab="voidware">Voidware 4 Game</button>
       </div>
     </div>
 
@@ -71,6 +87,44 @@
           <p class="text-gray-300 mb-6 text-center">Truy cập Dovi Hub hack tsb!</p>
           <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-300" onclick="window.location.href='/dovihub'">
             Get Dovi Hub
+          </button>
+        </div>
+      </div>
+
+      <!-- Voidware 4 Game Tab -->
+      <div id="voidware" class="tab-content hidden animate-fadeIn">
+        <div class="bg-gray-800 bg-opacity-50 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+          <h2 class="text-2xl font-semibold mb-4 text-center">Voidware 4 Game</h2>
+          <p class="text-gray-300 mb-6 text-center">Voidware hỗ trợ hack các game sau:</p>
+          
+          <div class="game-list max-h-80 overflow-y-auto space-y-3 mb-6 pr-2">
+            <!-- 99 Night Game -->
+            <div class="bg-gray-700 bg-opacity-70 p-4 rounded-xl">
+              <h3 class="text-lg font-semibold mb-2 text-red-400">99 Night</h3>
+              <p class="text-gray-300 text-sm">Hack game 99 Night với các tính năng độc quyền</p>
+            </div>
+            
+            <!-- Bed War Game -->
+            <div class="bg-gray-700 bg-opacity-70 p-4 rounded-xl">
+              <h3 class="text-lg font-semibold mb-2 text-red-400">Bed War</h3>
+              <p class="text-gray-300 text-sm">Chiến thắng mọi trận Bed War với Voidware</p>
+            </div>
+            
+            <!-- Ink Game -->
+            <div class="bg-gray-700 bg-opacity-70 p-4 rounded-xl">
+              <h3 class="text-lg font-semibold mb-2 text-red-400">Ink Game</h3>
+              <p class="text-gray-300 text-sm">Thống trị Ink Game với các tính năng hack mạnh mẽ</p>
+            </div>
+            
+            <!-- Forsaken Game -->
+            <div class="bg-gray-700 bg-opacity-70 p-4 rounded-xl">
+              <h3 class="text-lg font-semibold mb-2 text-red-400">Forsaken</h3>
+              <p class="text-gray-300 text-sm">Khám phá Forsaken với Voidware hỗ trợ</p>
+            </div>
+          </div>
+          
+          <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-300" onclick="window.location.href='/voidware'">
+            Get Script
           </button>
         </div>
       </div>
