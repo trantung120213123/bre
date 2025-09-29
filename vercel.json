@@ -4,5 +4,7 @@
     { "source": "/luex", "destination": "/scriptluex.html" },
     { "source": "/downloadvolcano", "destination": "/downloadvolcano.html" },
     { "source": "/luexhub", "destination": "/api/luexhub" }
+    { "source": "/dovihub", "destination": "/api/dovihub" }
+    { "source": "/dovii", "destination": "/dovii.html" }
   ]
 }
