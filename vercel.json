@@ -5,6 +5,8 @@
     { "source": "/downloadvolcano", "destination": "/downloadvolcano.html" },
     { "source": "/luexhub", "destination": "/api/luexhub" },
     { "source": "/dovihub", "destination": "/api/dovihub" },
-    { "source": "/dovii", "destination": "/dovii.html" }
+    { "source": "/dovii", "destination": "/dovii.html" },
+    { "source": "/voidwares", "destination": "/voidwares.html" },
+    { "source": "/voidware", "destination": "/api/voidware" }
   ]
 }
