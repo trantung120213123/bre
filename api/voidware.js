@@ -16,7 +16,7 @@ export default function handler(req, res) {
     }
   } else {
     // Browser -> redirect UI
-    res.writeHead(302, { Location: "/voidware" });
+    res.writeHead(302, { Location: "/voidwares" });
     res.end();
   }
 }
