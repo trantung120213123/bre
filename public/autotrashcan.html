@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luex</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f0f0f, #1e1e1e);
+      color: white;
+    }
+    .card {
+      text-align: center;
+      padding: 25px;
+      border-radius: 14px;
+      background: #1e1e1e;
+      box-shadow: 0 0 25px rgba(0, 200, 255, 0.6);
+      max-width: 550px;
+      width: 90%;
+    }
+    h1 {
+      margin-bottom: 18px;
+      color: #00d8ff;
+      text-shadow: 0 0 8px #00d8ff;
+    }
+    .box {
+      background: #2a2a2a;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      word-wrap: break-word;
+    }
+    button {
+      background: #00d8ff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #fff;
+    }
+    button:hover {
+      background: #00aacc;
+    }
+    .footer {
+      margin-top: 15px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>by LuexTeam</h1>
+    <div class="box" id="scriptBox">
+      loadstring(game:HttpGet('https://luexteamscript.vercel.app/autotrashhub'))()
+    </div>
+    <button onclick="copyScript()">Copy</button>
+    <div class="footer">Truy cập bị chặn ngoài Browser</div>
+  </div>
+  <script>
+    function copyScript() {
+      const text = document.getElementById("scriptBox").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("✅ Script copied!");
+      });
+    }
+  </script>
+</body>
+</html>
