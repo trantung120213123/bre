@@ -8,6 +8,7 @@
     { "source": "/dovii", "destination": "/dovii.html" },
     { "source": "/voidwares", "destination": "/voidwares.html" },
     { "source": "/voidware", "destination": "/api/voidware" },
-    { "source": "/supahub", "destination": "/api/supahub" }
+    { "source": "/supahub", "destination": "/api/supahub" },
+    { "source": "/supa", "destination": "/api/supatchh.html" }
   ]
 }
