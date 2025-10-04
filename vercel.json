@@ -10,7 +10,7 @@
     { "source": "/voidware", "destination": "/api/voidware" },
     { "source": "/supahub", "destination": "/api/supahub" },
     { "source": "/supa", "destination": "/supatechh.html" },
-    { "source": "/trashcanhub", "destination": "/api/autotrashhub.js" },
+    { "source": "/autotrashhub", "destination": "/api/autotrashhub.js" },
     { "source": "/autotrashcan", "destination": "/autotrashcan.html" }
   ]
 }
