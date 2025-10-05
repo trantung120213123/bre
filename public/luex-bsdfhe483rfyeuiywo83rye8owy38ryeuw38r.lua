@@ -1,11 +1,6 @@
---[[
-Luex UI (Enhanced) | Aesthetic red-black translucent UI, draggable, minimize-to-logo
-SAFE: purely client UI + local animations
-WIDE VERSION with Player Target Selection and Auto Kill Selected
-thank for using 
-]]
-
-
+-- Luex UI (Enhanced) | Aesthetic red-black translucent UI, draggable, minimize-to-logo
+-- SAFE: purely client UI + local animations
+-- WIDE VERSION with Improved Server Hop + Auto Save Config
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -14,54 +9,83 @@ local Stats = game:GetService("Stats")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
+
 -- Premium Key Mechanism
-local PREMIUM_KEY = "1"
+local PREMIUM_KEY = "luexprenium"
 local hasPremium = getgenv().LuexKey == PREMIUM_KEY
 
--- Cleanup old
+-- Auto Save Config System
+local Config = {
+    AutoOn = false,
+    AutoSelectedOn = false,
+    PredictOn = false,
+    ServerHopOn = false,
+    SafeZoneOn = false,
+    AutoRefreshOn = false,
+    UIPosition = {0.05, 0, 0.12, 0}
+}
+
+-- Load saved config
+local function LoadConfig()
+    if getgenv().LuexConfig then
+        for key, value in pairs(getgenv().LuexConfig) do
+            Config[key] = value
+        end
+    end
+end
+
+-- Save config
+local function SaveConfig()
+    getgenv().LuexConfig = Config
+end
+
+-- Load config immediately
+LoadConfig()
+
+-- cleanup old
 pcall(function()
     if game.CoreGui:FindFirstChild("LuexUI") then
         game.CoreGui.LuexUI:Destroy()
     end
 end)
 
--- Create ScreenGui
+-- create ScreenGui
 local screen = Instance.new("ScreenGui")
 screen.Name = "LuexUI"
 screen.ResetOnSpawn = false
 screen.Parent = game.CoreGui
 
--- Main container (WIDER)
+-- main container (WIDER)
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 600, 0, 380)  -- Wider UI
-main.Position = UDim2.new(0.05, 0, 0.12, 0)
-main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+main.Size = UDim2.new(0, 600, 0, 420)
+main.Position = UDim2.new(unpack(Config.UIPosition))
+main.BackgroundColor3 = Color3.fromRGB(12,12,12)
 main.BackgroundTransparency = 0.18
 main.BorderSizePixel = 0
 main.ClipsDescendants = true
 main.Active = true
 main.Parent = screen
 
--- Subtle red border glow (outer)
+-- subtle red border glow (outer)
 local border = Instance.new("Frame", main)
 border.Name = "BorderGlow"
-border.AnchorPoint = Vector2.new(0.5, 0.5)
-border.Position = UDim2.new(0.5, 0, 0.5, 0)
-border.Size = UDim2.new(1, 8, 1, 8)
+border.AnchorPoint = Vector2.new(0.5,0.5)
+border.Position = UDim2.new(0.5,0,0.5,0)
+border.Size = UDim2.new(1,8,1,8)
 border.BackgroundTransparency = 1
 border.ZIndex = 0
 local borderStroke = Instance.new("UIStroke", border)
 borderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-borderStroke.Color = Color3.fromRGB(200, 30, 30)
+borderStroke.Color = Color3.fromRGB(200,30,30)
 borderStroke.Transparency = 0.7
 borderStroke.Thickness = 2
 
--- Top bar (drag handle)
+-- top bar (drag handle)
 local topBar = Instance.new("Frame", main)
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 46)
-topBar.Position = UDim2.new(0, 0, 0, 0)
+topBar.Size = UDim2.new(1,0,0,46)
+topBar.Position = UDim2.new(0,0,0,0)
 topBar.BackgroundTransparency = 1
 
 -- Luex logo (TextLabel with glow + text stroke)
@@ -70,8 +94,8 @@ logo.Name = "Logo"
 logo.Text = "LUEX"
 logo.Font = Enum.Font.GothamBlack
 logo.TextSize = 28
-logo.TextColor3 = Color3.fromRGB(255, 120, 80)
-logo.TextStrokeColor3 = Color3.fromRGB(120, 10, 10)
+logo.TextColor3 = Color3.fromRGB(255,120,80)
+logo.TextStrokeColor3 = Color3.fromRGB(120,10,10)
 logo.TextStrokeTransparency = 0.3
 logo.BackgroundTransparency = 1
 logo.Position = UDim2.new(0, 12, 0, 6)
@@ -79,20 +103,20 @@ logo.Size = UDim2.new(0, 160, 0, 34)
 logo.TextXAlignment = Enum.TextXAlignment.Left
 logo.ZIndex = 3
 
--- Subtle gradient on text (via UIGradient on a label overlay)
+-- subtle gradient on text (via UIGradient on a label overlay)
 local gradHolder = Instance.new("Frame", logo)
-gradHolder.Size = UDim2.new(1, 0, 1, 0)
+gradHolder.Size = UDim2.new(1,0,1,0)
 gradHolder.BackgroundTransparency = 1
 local uiGrad = Instance.new("UIGradient", gradHolder)
 uiGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 20)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 160, 80)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 40, 10))
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,160,80)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200,40,10))
 }
 uiGrad.Rotation = 10
 gradHolder.ZIndex = 2
 
--- Crack effect: a few rotated lines layered on logo (animated)
+-- crack effect: a few rotated lines layered on logo (animated)
 local crackContainer = Instance.new("Frame", topBar)
 crackContainer.Name = "Crack"
 crackContainer.Size = UDim2.new(0, 140, 0, 34)
@@ -104,7 +128,7 @@ local function makeCrackLine(x, y, width, rot)
     local f = Instance.new("Frame", crackContainer)
     f.Size = UDim2.new(0, width, 0, 2)
     f.Position = UDim2.new(0, x, 0, y)
-    f.BackgroundColor3 = Color3.fromRGB(255, 60, 20)
+    f.BackgroundColor3 = Color3.fromRGB(255,60,20)
     f.BackgroundTransparency = 0.25
     f.Rotation = rot
     f.BorderSizePixel = 0
@@ -116,7 +140,7 @@ makeCrackLine(0.15, 18, 60, -12)
 makeCrackLine(0.45, 8, 40, 8)
 makeCrackLine(0.65, 22, 50, -6)
 
--- Minimize/restore button (top-right)
+-- minimize/restore button (top-right)
 local minBtn = Instance.new("TextButton", topBar)
 minBtn.Name = "Minimize"
 minBtn.Size = UDim2.new(0, 36, 0, 28)
@@ -126,10 +150,10 @@ minBtn.BorderSizePixel = 0
 minBtn.Text = "-"
 minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 22
-minBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+minBtn.TextColor3 = Color3.fromRGB(240,240,240)
 minBtn.ZIndex = 4
 
--- Content area (divided into two columns)
+-- content area (divided into two columns)
 local content = Instance.new("Frame", main)
 content.Name = "Content"
 content.Position = UDim2.new(0, 12, 0, 56)
@@ -150,111 +174,111 @@ rightColumn.Size = UDim2.new(0.48, 0, 1, 0)
 rightColumn.Position = UDim2.new(0.52, 0, 0, 0)
 rightColumn.BackgroundTransparency = 1
 
--- Auto Kill button
+-- Auto Kill button (Random Target)
 local btnAuto = Instance.new("TextButton", leftColumn)
-btnAuto.Size = UDim2.new(1, 0, 0, 46)
+btnAuto.Size = UDim2.new(1, 0, 0, 40)
 btnAuto.Position = UDim2.new(0, 0, 0, 0)
 btnAuto.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnAuto.BorderSizePixel = 0
-btnAuto.Text = "Toggle Auto Kill"
+btnAuto.Text = "Auto Kill Random: "..(Config.AutoOn and "ON" or "OFF")
 btnAuto.Font = Enum.Font.GothamBold
-btnAuto.TextSize = 18
-btnAuto.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnAuto.TextSize = 16
+btnAuto.TextColor3 = Color3.fromRGB(240,240,240)
 btnAuto.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke = Instance.new("UIStroke", btnAuto)
-stroke.Color = Color3.fromRGB(200, 20, 20)
+stroke.Color = Color3.fromRGB(200,20,20)
 stroke.Transparency = 0.85
 stroke.Thickness = 1.5
 
 -- Auto Kill Selected button
 local btnAutoSelected = Instance.new("TextButton", leftColumn)
-btnAutoSelected.Size = UDim2.new(1, 0, 0, 46)
-btnAutoSelected.Position = UDim2.new(0, 0, 0, 52)
+btnAutoSelected.Size = UDim2.new(1, 0, 0, 40)
+btnAutoSelected.Position = UDim2.new(0, 0, 0, 46)
 btnAutoSelected.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnAutoSelected.BorderSizePixel = 0
-btnAutoSelected.Text = "Auto Kill Selected: OFF"
+btnAutoSelected.Text = "Auto Kill Selected: "..(Config.AutoSelectedOn and "ON" or "OFF")
 btnAutoSelected.Font = Enum.Font.GothamBold
-btnAutoSelected.TextSize = 18
-btnAutoSelected.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnAutoSelected.TextSize = 16
+btnAutoSelected.TextColor3 = Color3.fromRGB(240,240,240)
 btnAutoSelected.AutoButtonColor = false
 
--- Hover glow
-local strokeAutoSelected = Instance.new("UIStroke", btnAutoSelected)
-strokeAutoSelected.Color = Color3.fromRGB(200, 20, 20)
-strokeAutoSelected.Transparency = 0.85
-strokeAutoSelected.Thickness = 1.5
+-- hover glow
+local strokeSelected = Instance.new("UIStroke", btnAutoSelected)
+strokeSelected.Color = Color3.fromRGB(200,20,20)
+strokeSelected.Transparency = 0.85
+strokeSelected.Thickness = 1.5
 
 -- Change Player button
 local btnChangePlayer = Instance.new("TextButton", leftColumn)
-btnChangePlayer.Size = UDim2.new(1, 0, 0, 46)
-btnChangePlayer.Position = UDim2.new(0, 0, 0, 104)
+btnChangePlayer.Size = UDim2.new(1, 0, 0, 40)
+btnChangePlayer.Position = UDim2.new(0, 0, 0, 92)
 btnChangePlayer.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnChangePlayer.BorderSizePixel = 0
 btnChangePlayer.Text = "Change Player"
 btnChangePlayer.Font = Enum.Font.GothamBold
-btnChangePlayer.TextSize = 18
-btnChangePlayer.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnChangePlayer.TextSize = 16
+btnChangePlayer.TextColor3 = Color3.fromRGB(240,240,240)
 btnChangePlayer.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke2 = Instance.new("UIStroke", btnChangePlayer)
-stroke2.Color = Color3.fromRGB(200, 20, 20)
+stroke2.Color = Color3.fromRGB(200,20,20)
 stroke2.Transparency = 0.85
 stroke2.Thickness = 1.5
 
 -- Predict Direction button
 local btnPredict = Instance.new("TextButton", leftColumn)
-btnPredict.Size = UDim2.new(1, 0, 0, 46)
-btnPredict.Position = UDim2.new(0, 0, 0, 156)
+btnPredict.Size = UDim2.new(1, 0, 0, 40)
+btnPredict.Position = UDim2.new(0, 0, 0, 138)
 btnPredict.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPredict.BorderSizePixel = 0
-btnPredict.Text = hasPremium and "Predict Direction: OFF" or "Predict Direction: PREMIUM"
+btnPredict.Text = hasPremium and "Predict Direction: "..(Config.PredictOn and "ON" or "OFF") or "Predict Direction: PREMIUM"
 btnPredict.Font = Enum.Font.GothamBold
-btnPredict.TextSize = 18
-btnPredict.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnPredict.TextSize = 16
+btnPredict.TextColor3 = Color3.fromRGB(240,240,240)
 btnPredict.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke3 = Instance.new("UIStroke", btnPredict)
-stroke3.Color = Color3.fromRGB(200, 20, 20)
+stroke3.Color = Color3.fromRGB(200,20,20)
 stroke3.Transparency = 0.85
 stroke3.Thickness = 1.5
 
 -- Auto Server Hop button
 local btnServerHop = Instance.new("TextButton", leftColumn)
-btnServerHop.Size = UDim2.new(1, 0, 0, 46)
-btnServerHop.Position = UDim2.new(0, 0, 0, 208)
+btnServerHop.Size = UDim2.new(1, 0, 0, 40)
+btnServerHop.Position = UDim2.new(0, 0, 0, 184)
 btnServerHop.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnServerHop.BorderSizePixel = 0
-btnServerHop.Text = "Auto Server Hop: OFF"
+btnServerHop.Text = "Auto Server Hop: "..(Config.ServerHopOn and "ON" or "OFF")
 btnServerHop.Font = Enum.Font.GothamBold
-btnServerHop.TextSize = 18
-btnServerHop.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnServerHop.TextSize = 16
+btnServerHop.TextColor3 = Color3.fromRGB(240,240,240)
 btnServerHop.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke5 = Instance.new("UIStroke", btnServerHop)
-stroke5.Color = Color3.fromRGB(200, 20, 20)
+stroke5.Color = Color3.fromRGB(200,20,20)
 stroke5.Transparency = 0.85
 stroke5.Thickness = 1.5
 
 -- Auto Safe Zone button
 local btnSafeZone = Instance.new("TextButton", leftColumn)
-btnSafeZone.Size = UDim2.new(1, 0, 0, 46)
-btnSafeZone.Position = UDim2.new(0, 0, 0, 260)
+btnSafeZone.Size = UDim2.new(1, 0, 0, 40)
+btnSafeZone.Position = UDim2.new(0, 0, 0, 230)
 btnSafeZone.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSafeZone.BorderSizePixel = 0
-btnSafeZone.Text = hasPremium and "Auto Safe Zone: OFF" or "Auto Safe Zone: PREMIUM"
+btnSafeZone.Text = hasPremium and "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF") or "Auto Safe Zone: PREMIUM"
 btnSafeZone.Font = Enum.Font.GothamBold
-btnSafeZone.TextSize = 18
-btnSafeZone.TextColor3 = Color3.fromRGB(240, 240, 240)
+btnSafeZone.TextSize = 16
+btnSafeZone.TextColor3 = Color3.fromRGB(240,240,240)
 btnSafeZone.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke6 = Instance.new("UIStroke", btnSafeZone)
-stroke6.Color = Color3.fromRGB(200, 20, 20)
+stroke6.Color = Color3.fromRGB(200,20,20)
 stroke6.Transparency = 0.85
 stroke6.Thickness = 1.5
 
@@ -272,7 +296,7 @@ playerTitle.TextXAlignment = Enum.TextXAlignment.Left
 -- Player List Container
 local playerListContainer = Instance.new("ScrollingFrame", rightColumn)
 playerListContainer.Name = "PlayerList"
-playerListContainer.Size = UDim2.new(1, 0, 0, 238) -- Reduced height to make space for buttons
+playerListContainer.Size = UDim2.new(1, 0, 0, 250)
 playerListContainer.Position = UDim2.new(0, 0, 0, 30)
 playerListContainer.BackgroundColor3 = Color3.fromRGB(20, 5, 5)
 playerListContainer.BackgroundTransparency = 0.2
@@ -282,54 +306,54 @@ playerListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playerListContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 playerListContainer.ScrollingDirection = Enum.ScrollingDirection.Y
 
--- Auto Refresh Toggle
-local autoRefreshToggle = Instance.new("TextButton", rightColumn)
-autoRefreshToggle.Size = UDim2.new(1, 0, 0, 36)
-autoRefreshToggle.Position = UDim2.new(0, 0, 1, -84) -- Moved below player list
-autoRefreshToggle.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
-autoRefreshToggle.BorderSizePixel = 0
-autoRefreshToggle.Text = "Auto Refresh: OFF"
-autoRefreshToggle.Font = Enum.Font.GothamBold
-autoRefreshToggle.TextSize = 16
-autoRefreshToggle.TextColor3 = Color3.fromRGB(240, 240, 240)
-autoRefreshToggle.AutoButtonColor = false
-
--- Hover glow
-local stroke8 = Instance.new("UIStroke", autoRefreshToggle)
-stroke8.Color = Color3.fromRGB(200, 20, 20)
-stroke8.Transparency = 0.85
-stroke8.Thickness = 1.5
-
 -- Refresh Button
 local refreshBtn = Instance.new("TextButton", rightColumn)
 refreshBtn.Size = UDim2.new(1, 0, 0, 36)
-refreshBtn.Position = UDim2.new(0, 0, 1, -42) -- Moved below Auto Refresh
+refreshBtn.Position = UDim2.new(0, 0, 1, -72)
 refreshBtn.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 refreshBtn.BorderSizePixel = 0
 refreshBtn.Text = "🔄 Refresh Players"
 refreshBtn.Font = Enum.Font.GothamBold
 refreshBtn.TextSize = 16
-refreshBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+refreshBtn.TextColor3 = Color3.fromRGB(240,240,240)
 refreshBtn.AutoButtonColor = false
 
--- Hover glow
+-- hover glow
 local stroke7 = Instance.new("UIStroke", refreshBtn)
-stroke7.Color = Color3.fromRGB(200, 20, 20)
+stroke7.Color = Color3.fromRGB(200,20,20)
 stroke7.Transparency = 0.85
 stroke7.Thickness = 1.5
 
--- Small hint text
+-- Auto Refresh Toggle
+local autoRefreshToggle = Instance.new("TextButton", rightColumn)
+autoRefreshToggle.Size = UDim2.new(1, 0, 0, 36)
+autoRefreshToggle.Position = UDim2.new(0, 0, 1, -36)
+autoRefreshToggle.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+autoRefreshToggle.BorderSizePixel = 0
+autoRefreshToggle.Text = "Auto Refresh: "..(Config.AutoRefreshOn and "ON" or "OFF")
+autoRefreshToggle.Font = Enum.Font.GothamBold
+autoRefreshToggle.TextSize = 16
+autoRefreshToggle.TextColor3 = Color3.fromRGB(240,240,240)
+autoRefreshToggle.AutoButtonColor = false
+
+-- hover glow
+local stroke8 = Instance.new("UIStroke", autoRefreshToggle)
+stroke8.Color = Color3.fromRGB(200,20,20)
+stroke8.Transparency = 0.85
+stroke8.Thickness = 1.5
+
+-- small hint text
 local hint = Instance.new("TextLabel", leftColumn)
-hint.Size = UDim2.new(1, 0, 0, 28)
-hint.Position = UDim2.new(0, 0, 1, -28)
+hint.Size = UDim2.new(1,0,0,28)
+hint.Position = UDim2.new(0,0,1,-28)
 hint.BackgroundTransparency = 1
-hint.TextColor3 = Color3.fromRGB(200, 200, 200)
+hint.TextColor3 = Color3.fromRGB(200,200,200)
 hint.TextSize = 12
 hint.Font = Enum.Font.Gotham
-hint.Text = "Luex v1.9 | Enhanced Combat System + Server Hop + Safe Zone"
+hint.Text = "Luex v2.0 | Improved Server Hop + Auto Save Config"
 hint.TextWrapped = true
 
--- Logo animation: pulsing glow
+-- logo animation: pulsing glow
 local glowFrame = Instance.new("Frame", logo)
 glowFrame.Size = UDim2.new(1.6, 0, 1.6, 0)
 glowFrame.Position = UDim2.new(-0.3, 0, -0.3, 0)
@@ -341,7 +365,7 @@ glowStroke.Color = Color3.fromRGB(255, 80, 20)
 glowStroke.Transparency = 0.9
 glowStroke.Thickness = 6
 
--- Store global refs
+-- store global refs
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
@@ -373,6 +397,9 @@ local function updateDrag(input)
             startPos.Y.Scale,
             startPos.Y.Offset + delta.Y
         )
+        -- Save UI position when dragging stops
+        Config.UIPosition = {main.Position.X.Scale, main.Position.X.Offset, main.Position.Y.Scale, main.Position.Y.Offset}
+        SaveConfig()
     end
 end
 
@@ -384,6 +411,7 @@ topBar.InputBegan:Connect(function(input)
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
+                SaveConfig() -- Save position when drag ends
             end
         end)
     end
@@ -395,15 +423,15 @@ topBar.InputChanged:Connect(function(input)
     end
 end)
 
--- Minimize behavior (tween) - keeps current position
+-- minimize behavior (tween) - keeps current position
 local minimized = false
 minBtn.MouseButton1Click:Connect(function()
     if minimized then
-        TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 600, 0, 380)}):Play()
+        TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,600,0,420)}):Play()
         content.Visible = true
         logo.TextTransparency = 0
     else
-        local targetSize = UDim2.new(0, 150, 0, 46)
+        local targetSize = UDim2.new(0,150,0,46)
         TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize}):Play()
         content.Visible = false
         logo.TextTransparency = 0
@@ -413,12 +441,12 @@ end)
 
 -- Luex Logic | Pure Combat System
 local UI = getgenv().LuexUI
-local autoOn = false
-local autoSelectedOn = false
-local predictOn = false
-local serverHopOn = false
-local safeZoneOn = false
-local autoRefreshOn = false
+local autoOn = Config.AutoOn
+local autoSelectedOn = Config.AutoSelectedOn
+local predictOn = Config.PredictOn
+local serverHopOn = Config.ServerHopOn
+local safeZoneOn = Config.SafeZoneOn
+local autoRefreshOn = Config.AutoRefreshOn
 local currentTarget = nil
 local highlightGui = nil
 local lastAttack = 0
@@ -427,94 +455,26 @@ local attackRate = 0.01
 local faceRate = 0.01
 local lastNoTargetNotify = 0
 local noTargetNotifyCooldown = 5
+local lastServerHopCheck = 0
+local serverHopCooldown = 10 -- Cooldown between server hop checks
 
 -- Safe Zone variables
 local safePlatform = nil
 local wasAutoKillOn = false
 
--- Check if we have stored states from previous execution
-if getgenv().LuexStates then
-    autoOn = getgenv().LuexStates.AutoOn or false
-    autoSelectedOn = getgenv().LuexStates.AutoSelectedOn or false
-    predictOn = getgenv().LuexStates.PredictOn or false
-    serverHopOn = getgenv().LuexStates.ServerHopOn or false
-    safeZoneOn = getgenv().LuexStates.SafeZoneOn or false
-    autoRefreshOn = getgenv().LuexStates.AutoRefreshOn or false
-
-    UI.AutoBtn.Text = "Toggle Auto Kill: " .. (autoOn and "ON" or "OFF")
-    UI.AutoSelectedBtn.Text = "Auto Kill Selected: " .. (autoSelectedOn and "ON" or "OFF")
-    UI.PredictBtn.Text = hasPremium and "Predict Direction: " .. (predictOn and "ON" or "OFF") or "Predict Direction: PREMIUM"
-    UI.ServerHopBtn.Text = "Auto Server Hop: " .. (serverHopOn and "ON" or "OFF")
-    UI.SafeZoneBtn.Text = hasPremium and "Auto Safe Zone: " .. (safeZoneOn and "ON" or "OFF") or "Auto Safe Zone: PREMIUM"
-    UI.AutoRefreshToggle.Text = "Auto Refresh: " .. (autoRefreshOn and "ON" or "OFF")
-end
-
 -- Tool list
 local toolList = {
-    "Normal Punch",
-    "Consecutive Punches",
-    "Shove",
-    "Uppercut",
-    "Death Counter",
-    "Table Flip",
-    "Serious Punch",
-    "Omni-Directional Punch",
-    "Flowing Water",
-    "Lethal Whirlwind Stream",
-    "Hunter's Grasp",
-    "Prey's Peril",
-    "Water Stream Cutting Fist",
-    "The Final Hunt",
-    "Rock Splitting Fist",
-    "Crushed Rock",
-    "Machine Gun Blows",
-    "Ignition Burst",
-    "Blitz Shot",
-    "Jet Dive",
-    "Thunder Kick",
-    "Speedblitz Dropkick",
-    "Flamewave Cannon",
-    "Incinerate",
-    "Flash Strike",
-    "Whirlwind Kick",
-    "Scatter",
-    "Explosive Shuriken",
-    "Twinblade Rush",
-    "Straight On",
-    "Carnage",
-    "Fourfold Flashstrike",
-    "Homerun",
-    "Beatdown",
-    "Grand Slam",
-    "Foul Ball",
-    "Savage Tornado",
-    "Brutual Beatdown",
-    "Strength Difference",
-    "Death Blow",
-    "Quick Slice",
-    "Atmos Cleave",
-    "Pinpoint Cut",
-    "Split Second Counter",
-    "Sunset",
-    "Solar Cleave",
-    "Sunrise",
-    "Atomic Slash",
-    "Crushing Pull",
-    "Windstorm Fury",
-    "Stone Coffin",
-    "Expulsive Push",
-    "Cosmic Strike",
-    "Psychic Ricochet",
-    "Terrible Tornado",
-    "Sky Snatcher",
-    "Bullet Barrage",
-    "Vanishing Kick",
-    "Whirlwind Drop",
-    "Head First",
-    "Grand Fissure",
-    "Twin Fangs",
-    "Earth Splitting Strike",
-    "Last Breath"
+    "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Death Counter", "Table Flip", "Serious Punch",
+    "Omni-Directional Punch", "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
+    "Water Stream Cutting Fist", "The Final Hunt", "Rock Splitting Fist", "Crushed Rock", "Machine Gun Blows",
+    "Ignition Burst", "Blitz Shot", "Jet Dive", "Thunder Kick", "Speedblitz Dropkick", "Flamewave Cannon",
+    "Incinerate", "Flash Strike", "Whirlwind Kick", "Scatter", "Explosive Shuriken", "Twinblade Rush", "Straight On",
+    "Carnage", "Fourfold Flashstrike", "Homerun", "Beatdown", "Grand Slam", "Foul Ball", "Savage Tornado",
+    "Brutual Beatdown", "Strength Difference", "Death Blow", "Quick Slice", "Atmos Cleave", "Pinpoint Cut",
+    "Split Second Counter", "Sunset", "Solar Cleave", "Sunrise", "Atomic Slash", "Crushing Pull", "Windstorm Fury",
+    "Stone Coffin", "Expulsive Push", "Cosmic Strike", "Psychic Ricochet", "Terrible Tornado", "Sky Snatcher",
+    "Bullet Barrage", "Vanishing Kick", "Whirlwind Drop", "Head First", "Grand Fissure", "Twin Fangs",
+    "Earth Splitting Strike", "Last Breath"
 }
 
 -- Improved notification system
@@ -597,14 +557,14 @@ local function notify(text, sec)
     cleanupNotifications()
 
     for i, notif in ipairs(activeNotifications) do
-        local targetY = 0.02 + (i - 1) * 0.06
+        local targetY = 0.02 + (i-1) * 0.06
         TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Position = UDim2.new(1, -10, targetY, 0)
         }):Play()
     end
 
     TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(1, -10, 0.02 + (#activeNotifications - 1) * 0.06, 0)
+        Position = UDim2.new(1, -10, 0.02 + (#activeNotifications-1) * 0.06, 0)
     }):Play()
 
     spawn(function()
@@ -623,7 +583,7 @@ local function notify(text, sec)
         processNotificationQueue()
 
         for i, notif in ipairs(activeNotifications) do
-            local targetY = 0.02 + (i - 1) * 0.06
+            local targetY = 0.02 + (i-1) * 0.06
             TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Position = UDim2.new(1, -10, targetY, 0)
             }):Play()
@@ -632,7 +592,7 @@ local function notify(text, sec)
     end)
 end
 
--- Highlight target
+-- highlight target
 local function makeHighlight(player)
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
@@ -644,15 +604,15 @@ local function makeHighlight(player)
         bg.Name = "LuexTargetHighlight"
         bg.Parent = player.Character
         bg.Adornee = root
-        bg.Size = UDim2.new(0, 140, 0, 48)
+        bg.Size = UDim2.new(0,140,0,48)
         bg.AlwaysOnTop = true
 
         local label = Instance.new("TextLabel", bg)
-        label.Size = UDim2.new(1, 0, 1, 0)
+        label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 0.25
-        label.BackgroundColor3 = Color3.fromRGB(40, 5, 5)
-        label.Text = "TARGET: " .. player.Name
-        label.TextColor3 = Color3.fromRGB(255, 200, 200)
+        label.BackgroundColor3 = Color3.fromRGB(40,5,5)
+        label.Text = "TARGET: "..player.Name
+        label.TextColor3 = Color3.fromRGB(255,200,200)
         label.Font = Enum.Font.GothamBold
         label.TextSize = 14
         label.TextStrokeTransparency = 0.6
@@ -667,10 +627,10 @@ local function clearHighlight()
     end)
 end
 
--- Choose random player (excluding current target)
+-- choose random player (excluding current target)
 local function chooseRandom()
     local pls = {}
-    for _, p in pairs(Players:GetPlayers()) do
+    for _,p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and
             p ~= currentTarget and
             p.Character and
@@ -680,7 +640,7 @@ local function chooseRandom()
         end
     end
     if #pls == 0 then return nil end
-    return pls[math.random(1, #pls)]
+    return pls[math.random(1,#pls)]
 end
 
 -- Get ping function
@@ -777,11 +737,14 @@ local function createSafePlatform()
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then return end
 
-    wasAutoKillOn = autoOn
+    wasAutoKillOn = autoOn or autoSelectedOn
     autoOn = false
     autoSelectedOn = false
-    UI.AutoBtn.Text = "Toggle Auto Kill: OFF"
+    UI.AutoBtn.Text = "Auto Kill Random: OFF"
     UI.AutoSelectedBtn.Text = "Auto Kill Selected: OFF"
+    Config.AutoOn = false
+    Config.AutoSelectedOn = false
+    SaveConfig()
 
     safePlatform = Instance.new("Part")
     safePlatform.Name = "LuexSafePlatform"
@@ -807,8 +770,13 @@ local function removeSafePlatform()
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid and (humanoid.Health / humanoid.MaxHealth) > 0.8 then
                 autoOn = wasAutoKillOn
-                UI.AutoBtn.Text = "Toggle Auto Kill: " .. (autoOn and "ON" or "OFF")
-                notify("Safe Zone deactivated! Auto Kill " .. (autoOn and "enabled" or "disabled") .. ".", 3)
+                autoSelectedOn = wasAutoKillOn
+                UI.AutoBtn.Text = "Auto Kill Random: "..(autoOn and "ON" or "OFF")
+                UI.AutoSelectedBtn.Text = "Auto Kill Selected: "..(autoSelectedOn and "ON" or "OFF")
+                Config.AutoOn = autoOn
+                Config.AutoSelectedOn = autoSelectedOn
+                SaveConfig()
+                notify("Safe Zone deactivated! Auto Kill "..(wasAutoKillOn and "enabled" or "disabled")..".", 3)
             else
                 notify("Safe Zone deactivated! Health too low for Auto Kill.", 3)
             end
@@ -816,37 +784,79 @@ local function removeSafePlatform()
     end
 end
 
--- Auto Server Hop Functions
+-- IMPROVED Server Hop Functions
 local PlaceId = game.PlaceId
 
-local function getServers(minPlayers)
-    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+local function getServers(minPlayers, maxPlayers)
     local servers = {}
-    local cursor
-
-    repeat
-        local queryUrl = url .. (cursor and "&cursor=" .. cursor or "")
-        local response = game:HttpGet(queryUrl)
-        local data = HttpService:JSONDecode(response)
-
-        for _, server in ipairs(data.data) do
-            if server.playing >= minPlayers and server.id ~= game.JobId then
-                table.insert(servers, server)
+    local success, result = pcall(function()
+        -- Try multiple API endpoints for better reliability
+        local urls = {
+            "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100",
+            "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100"
+        }
+        
+        for _, url in ipairs(urls) do
+            local response = game:HttpGet(url)
+            local data = HttpService:JSONDecode(response)
+            
+            for _, server in ipairs(data.data) do
+                if server.playing >= minPlayers and server.playing <= maxPlayers and server.id ~= game.JobId then
+                    table.insert(servers, server)
+                end
             end
         end
-        cursor = data.nextPageCursor
-    until not cursor
-
-    return servers
+        
+        return servers
+    end)
+    
+    if success then
+        return servers
+    else
+        warn("Failed to get server list: " .. tostring(result))
+        return {}
+    end
 end
 
 local function hopServer()
-    local servers = getServers(10)
+    local minPlayers = 8  -- Minimum players for good server
+    local maxPlayers = 20 -- Maximum players to avoid full servers
+    
+    local servers = getServers(minPlayers, maxPlayers)
+    
     if #servers > 0 then
-        local picked = servers[math.random(1, #servers)]
-        TeleportService:TeleportToPlaceInstance(PlaceId, picked.id, LocalPlayer)
+        -- Sort by player count (prefer medium-populated servers)
+        table.sort(servers, function(a, b)
+            return math.abs(a.playing - 12) < math.abs(b.playing - 12) -- Prefer around 12 players
+        end)
+        
+        local bestServer = servers[1]
+        notify("Hopping to server with "..bestServer.playing.." players...", 3)
+        
+        -- Try to teleport
+        local success, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(PlaceId, bestServer.id, LocalPlayer)
+        end)
+        
+        if not success then
+            notify("Server hop failed, trying alternative...", 2)
+            -- Try another server if first fails
+            if #servers > 1 then
+                wait(2)
+                local altServer = servers[2]
+                TeleportService:TeleportToPlaceInstance(PlaceId, altServer.id, LocalPlayer)
+            end
+        end
     else
-        warn("No suitable servers found (>10 players).")
+        -- If no ideal servers found, try with broader criteria
+        servers = getServers(3, 30)
+        if #servers > 0 then
+            local backupServer = servers[math.random(1, #servers)]
+            notify("No ideal servers, hopping to backup with "..backupServer.playing.." players...", 3)
+            TeleportService:TeleportToPlaceInstance(PlaceId, backupServer.id, LocalPlayer)
+        else
+            notify("No suitable servers found for hopping.", 3)
+        end
     end
 end
 
@@ -861,7 +871,7 @@ local function createPlayerButton(player, yPosition)
     button.Text = player.Name
     button.Font = Enum.Font.Gotham
     button.TextSize = 14
-    button.TextColor3 = Color3.fromRGB(240, 240, 240)
+    button.TextColor3 = Color3.fromRGB(240,240,240)
     button.AutoButtonColor = false
     button.Parent = UI.PlayerList
     
@@ -901,7 +911,7 @@ local function createPlayerButton(player, yPosition)
     button.MouseButton1Click:Connect(function()
         if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("Humanoid").Health > 0 then
             currentTarget = player
-            notify("Selected: " .. player.Name, 2)
+            notify("Selected: "..player.Name, 2)
             makeHighlight(currentTarget)
             refreshPlayerList()
             
@@ -954,10 +964,13 @@ spawn(function()
     while true do
         RunService.Heartbeat:Wait()
 
-        -- Auto Server Hop Logic
-        if serverHopOn then
-            if #Players:GetPlayers() < 3 then
-                notify("Server too empty, hopping...", 2)
+        -- IMPROVED Auto Server Hop Logic
+        if serverHopOn and tick() - lastServerHopCheck > serverHopCooldown then
+            lastServerHopCheck = tick()
+            
+            local playerCount = #Players:GetPlayers()
+            if playerCount < 5 then -- Increased minimum to 5 players
+                notify("Server has only "..playerCount.." players, hopping...", 2)
                 hopServer()
             end
         end
@@ -983,12 +996,12 @@ spawn(function()
             end
         end
 
-        -- Auto Kill Logic (Random Targets)
+        -- Auto Kill Logic (Random Target)
         if autoOn and not safePlatform then
             if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 then
                 currentTarget = chooseRandom()
                 if currentTarget then
-                    notify("Selected: " .. currentTarget.Name, 1.8)
+                    notify("Selected random: "..currentTarget.Name, 1.8)
                     makeHighlight(currentTarget)
                     lastNoTargetNotify = 0
                 else
@@ -1013,22 +1026,30 @@ spawn(function()
         end
 
         -- Auto Kill Selected Logic
-        if autoSelectedOn and not safePlatform and currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
-            if tick() - lastAttack > attackRate then
-                teleportBehindTargetStep()
-                spamAttack()
-                lastAttack = tick()
-            end
+        if autoSelectedOn and not safePlatform then
+            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
+                if tick() - lastAttack > attackRate then
+                    teleportBehindTargetStep()
+                    spamAttack()
+                    lastAttack = tick()
+                end
 
-            if tick() - lastFace > faceRate then
-                faceTargetStep()
-                lastFace = tick()
+                if tick() - lastFace > faceRate then
+                    faceTargetStep()
+                    lastFace = tick()
+                end
+            else
+                if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
+                    notify("Selected target is not valid.", 1.8)
+                    lastNoTargetNotify = tick()
+                end
+                clearHighlight()
             end
         end
     end
 end)
 
--- Auto Kill button
+-- Auto Kill Random button
 UI.AutoBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1036,22 +1057,26 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
     end
 
     autoOn = not autoOn
-    UI.AutoBtn.Text = "Toggle Auto Kill: " .. (autoOn and "ON" or "OFF")
-
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.AutoOn = autoOn
+    UI.AutoBtn.Text = "Auto Kill Random: "..(autoOn and "ON" or "OFF")
+    Config.AutoOn = autoOn
+    SaveConfig()
 
     if autoOn then
-        notify("Auto Kill enabled. Selecting target...", 2)
+        autoSelectedOn = false
+        UI.AutoSelectedBtn.Text = "Auto Kill Selected: OFF"
+        Config.AutoSelectedOn = false
+        SaveConfig()
+        
+        notify("Auto Kill Random enabled. Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
-            notify("Target: " .. currentTarget.Name, 2)
+            notify("Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
         else
             notify("No valid targets found", 2)
         end
     else
-        notify("Auto Kill disabled", 1.5)
+        notify("Auto Kill Random disabled", 1.5)
         clearHighlight()
     end
 end)
@@ -1059,26 +1084,34 @@ end)
 -- Auto Kill Selected button
 UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
     if safePlatform then
-        notify("Cannot enable Auto Kill Selected while in Safe Zone!", 2)
-        return
-    end
-
-    if not currentTarget then
-        notify("Please select a player first!", 2)
+        notify("Cannot enable Auto Kill while in Safe Zone!", 2)
         return
     end
 
     autoSelectedOn = not autoSelectedOn
-    UI.AutoSelectedBtn.Text = "Auto Kill Selected: " .. (autoSelectedOn and "ON" or "OFF")
-
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.AutoSelectedOn = autoSelectedOn
+    UI.AutoSelectedBtn.Text = "Auto Kill Selected: "..(autoSelectedOn and "ON" or "OFF")
+    Config.AutoSelectedOn = autoSelectedOn
+    SaveConfig()
 
     if autoSelectedOn then
-        notify("Auto Kill Selected enabled for: " .. currentTarget.Name, 2)
-        makeHighlight(currentTarget)
+        autoOn = false
+        UI.AutoBtn.Text = "Auto Kill Random: OFF"
+        Config.AutoOn = false
+        SaveConfig()
+        
+        if currentTarget then
+            notify("Auto Kill Selected enabled. Target: "..currentTarget.Name, 2)
+            makeHighlight(currentTarget)
+        else
+            notify("Auto Kill Selected enabled. Please select a target first.", 2)
+            autoSelectedOn = false
+            UI.AutoSelectedBtn.Text = "Auto Kill Selected: OFF"
+            Config.AutoSelectedOn = false
+            SaveConfig()
+        end
     else
         notify("Auto Kill Selected disabled", 1.5)
+        clearHighlight()
     end
 end)
 
@@ -1099,7 +1132,7 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
 
     if #players > 0 then
         currentTarget = players[math.random(1, #players)]
-        notify("Changed target to: " .. currentTarget.Name, 2)
+        notify("Changed target to: "..currentTarget.Name, 2)
         makeHighlight(currentTarget)
         refreshPlayerList()
 
@@ -1121,10 +1154,9 @@ UI.PredictBtn.MouseButton1Click:Connect(function()
     end
 
     predictOn = not predictOn
-    UI.PredictBtn.Text = "Predict Direction: " .. (predictOn and "ON" or "OFF")
-
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.PredictOn = predictOn
+    UI.PredictBtn.Text = "Predict Direction: "..(predictOn and "ON" or "OFF")
+    Config.PredictOn = predictOn
+    SaveConfig()
 
     if predictOn then
         notify("Direction Prediction enabled (Beta)", 2)
@@ -1136,13 +1168,12 @@ end)
 -- Server Hop button
 UI.ServerHopBtn.MouseButton1Click:Connect(function()
     serverHopOn = not serverHopOn
-    UI.ServerHopBtn.Text = "Auto Server Hop: " .. (serverHopOn and "ON" or "OFF")
-
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.ServerHopOn = serverHopOn
+    UI.ServerHopBtn.Text = "Auto Server Hop: "..(serverHopOn and "ON" or "OFF")
+    Config.ServerHopOn = serverHopOn
+    SaveConfig()
 
     if serverHopOn then
-        notify("Auto Server Hop enabled", 2)
+        notify("Auto Server Hop enabled (min 5 players)", 2)
     else
         notify("Auto Server Hop disabled", 1.5)
     end
@@ -1156,10 +1187,9 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     end
 
     safeZoneOn = not safeZoneOn
-    UI.SafeZoneBtn.Text = "Auto Safe Zone: " .. (safeZoneOn and "ON" or "OFF")
-
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.SafeZoneOn = safeZoneOn
+    UI.SafeZoneBtn.Text = "Auto Safe Zone: "..(safeZoneOn and "ON" or "OFF")
+    Config.SafeZoneOn = safeZoneOn
+    SaveConfig()
 
     if safeZoneOn then
         notify("Auto Safe Zone enabled", 2)
@@ -1187,10 +1217,9 @@ end)
 -- Auto Refresh Toggle button
 UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
     autoRefreshOn = not autoRefreshOn
-    UI.AutoRefreshToggle.Text = "Auto Refresh: " .. (autoRefreshOn and "ON" or "OFF")
-    
-    if not getgenv().LuexStates then getgenv().LuexStates = {} end
-    getgenv().LuexStates.AutoRefreshOn = autoRefreshOn
+    UI.AutoRefreshToggle.Text = "Auto Refresh: "..(autoRefreshOn and "ON" or "OFF")
+    Config.AutoRefreshOn = autoRefreshOn
+    SaveConfig()
     
     if autoRefreshOn then
         notify("Auto Refresh enabled", 1.5)
@@ -1203,7 +1232,7 @@ end)
 -- Animate crack lines
 spawn(function()
     while true do
-        for i, child in ipairs(UI.Crack:GetChildren()) do
+        for i,child in ipairs(UI.Crack:GetChildren()) do
             if child:IsA("Frame") then
                 TweenService:Create(child, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1, true), {BackgroundTransparency = 0.6}):Play()
             end
@@ -1235,14 +1264,9 @@ Players.PlayerRemoving:Connect(function(p)
         if autoOn then
             currentTarget = chooseRandom()
             if currentTarget then
-                notify("New target: " .. currentTarget.Name, 2)
+                notify("New target: "..currentTarget.Name, 2)
                 makeHighlight(currentTarget)
             end
-        end
-        if autoSelectedOn then
-            autoSelectedOn = false
-            UI.AutoSelectedBtn.Text = "Auto Kill Selected: OFF"
-            notify("Auto Kill Selected disabled (target left)", 2)
         end
     end
     refreshPlayerList()
@@ -1253,4 +1277,7 @@ Players.PlayerAdded:Connect(function(p)
     refreshPlayerList()
 end)
 
-print("Luex Enhanced Combat System v1.9 with Player Selection, Auto Kill Selected, and Auto Refresh loaded")
+-- Manual Server Hop Function (can be called externally)
+getgenv().LuexHopServer = hopServer
+
+print("Luex Enhanced Combat System v2.0 with Improved Server Hop & Auto Save Config loaded")
