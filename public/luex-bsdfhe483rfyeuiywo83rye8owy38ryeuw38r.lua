@@ -11,7 +11,7 @@ local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 
 -- Premium Key Mechanism
-local PREMIUM_KEY = "luexprenium"
+local PREMIUM_KEY = "1"
 local hasPremium = getgenv().LuexKey == PREMIUM_KEY
 
 -- Auto Save Config System
