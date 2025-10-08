@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PBF Luau Obfuscator Cực Xịn Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { transition: all 0.3s ease; background-color: #1a1a1a; }
+        #input, #output { white-space: pre-wrap; font-family: monospace; overflow-y: auto; max-height: 300px; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .tooltip { position: relative; }
+        .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
+    <div class="w-full max-w-4xl animate-fade-in">
+        <h1 class="text-4xl font-extrabold text-center bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text mb-6">PBF Luau Obfuscator Cực Xịn Pro</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-lg font-semibold mb-2">Input Code Luau</label>
+                <textarea id="input" class="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Paste code Luau đây... e.g., print('Hello Luau!')"></textarea>
+            </div>
+            <div>
+                <label class="block text-lg font-semibold mb-2">Output Obfuscated</label>
+                <div id="output" class="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg font-mono text-white"></div>
+            </div>
+        </div>
+        <div class="flex space-x-4 my-6 justify-center">
+            <div class="tooltip">
+                <button onclick="obfuscate()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition transform hover:scale-105 animate-pulse">Obfuscate!</button>
+                <span class="tooltiptext">Bấm để obfuscate code của bạn</span>
+            </div>
+            <div class="tooltip">
+                <button onclick="copyOutput()" class="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition transform hover:scale-105">Copy Output</button>
+                <span class="tooltiptext">Bấm để copy output</span>
+            </div>
+        </div>
+        <footer class="mt-8 text-center text-gray-400 text-base">
+            <p>PBF Obfuscator giúp che giấu mã nguồn, bảo vệ script game Roblox khỏi bị đánh cắp hoặc reverse-engineer. Chỉ sử dụng cho mục đích hợp pháp.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Random name generator
+        function generateRandomName(len = 14) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let name = '';
+            for (let i = 0; i < len; i++) {
+                name += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return name;
+        }
+
+        // Polymorphic ASCII encode (more variants)
+        function asciiEncode(code) {
+            return code.split('').map(c => {
+                const codeVal = c.charCodeAt(0);
+                const rand = Math.floor(Math.random() * 6);
+                const offset = Math.floor(Math.random() * 7) + 1;
+                if (rand === 0) return `\\${codeVal}`;
+                if (rand === 1) return `\\${codeVal - offset}+${offset}`;
+                if (rand === 2) return `(${codeVal - offset}+${offset})`;
+                if (rand === 3) return `(${-offset}+${codeVal + offset})`;
+                if (rand === 4) return `math.ceil(${codeVal - 0.5}+0.5)`;
+                return `tonumber("${codeVal}")`;
+            }).join('');
+        }
+
+        // Rename variables (more keywords)
+        function renameVariables(code) {
+            const varMap = {
+                'local': generateRandomName(),
+                'player': generateRandomName(),
+                'print': generateRandomName(8),
+                'game': generateRandomName(),
+                'function': generateRandomName(),
+                'Players': generateRandomName(),
+                'script': generateRandomName(),
+                'require': generateRandomName(),
+                'getfenv': generateRandomName(),
+                'Instance': generateRandomName(),
+                'workspace': generateRandomName()
+            };
+            let result = code;
+            for (const [oldVar, newVar] of Object.entries(varMap)) {
+                const regex = new RegExp(`\\b${oldVar}\\b`, 'g');
+                result = result.replace(regex, newVar);
+            }
+            return result;
+        }
+
+        // Dynamic control flow flattening (more complex)
+        function flattenControlFlow(code) {
+            const stateVar = generateRandomName();
+            const dispatchVar = generateRandomName();
+            const states = [generateRandomName(), generateRandomName()];
+            let result = code;
+            
+            // Replace if statements
+            result = result.replace(/if\s+(\w+)\s+then/g, `local ${stateVar} = $1; local ${dispatchVar} = {["${states[0]}"] = function()`);
+            
+            // Replace while loops
+            result = result.replace(/while\s+(\w+)\s+do/g, `local ${stateVar} = $1; local ${dispatchVar} = {["${states[1]}"] = function()`);
+            
+            // Replace for loops
+            result = result.replace(/for\s+(\w+)\s*=\s*(\d+)\s*,\s*(\d+)\s+do/g, `local ${stateVar} = $1; local ${dispatchVar} = {["loop"] = function()`);
+            
+            // Replace end statements
+            result = result.replace(/end/g, `end;}; ${dispatchVar}[tostring(${stateVar}) or "loop"]()`);
+            
+            return `local _stateMgr = "${generateRandomName()}";\n` + result;
+        }
+
+        // Fake bytecode injection
+        function addFakeBytecode(code) {
+            const fakeBytes = Array(5).fill().map(() => `\\x${Math.floor(Math.random() * 255).toString(16).padStart(2, '0')}`).join('');
+            return `local _bc = "${fakeBytes}"; -- fake bytecode\n` + code;
+        }
+
+        // Generate ultra-complex junk code
+        function generateJunkCode(inputLength) {
+            const junkLength = Math.floor(inputLength * 0.5);
+            let junk = '';
+            const junkTypes = [
+                () => `local ${generateRandomName()} = ${Math.floor(Math.random() * 1000) + Math.random().toFixed(4)}`,
+                () => `for _=1,${Math.floor(Math.random() * 5) + 1} do local _${generateRandomName()} = math.sin(${Math.random().toFixed(4)}) * 0; if false then end; end`,
+                () => `if false then ${generateRandomName()} = {nested={${Math.random().toFixed(4)},${Math.random().toFixed(4)}}}; end`,
+                () => `function ${generateRandomName()}(...) local _ = "${generateRandomName(20)}"; return (function() return _; end)(); end`,
+                () => `local _t = {${Array(6).fill().map(() => `{val=${Math.random().toFixed(4)},id="${generateRandomName(10)}"}`).join(', ')}}`,
+                () => `local _bc = "${generateRandomName(30)}"; -- fake bytecode complex`,
+                () => `local _up = getfenv().${generateRandomName()}; if _up then local _nested = {${Math.random().toFixed(4)}}; end`,
+                () => `local _mt = setmetatable({}, {__index = function() return "${generateRandomName(15)}"; end})`,
+                () => `local _closure = (function() return math.random() * 0 + "${generateRandomName(12)}"; end)()`
+            ];
+            let currentLength = 0;
+            while (currentLength < junkLength) {
+                const junkLine = junkTypes[Math.floor(Math.random() * junkTypes.length)]();
+                junk += junkLine + ';';
+                currentLength += junkLine.length;
+            }
+            return junk;
+        }
+
+        // Add noise (inline junk with ;)
+        function addNoise(code) {
+            const junk = generateJunkCode(code.length);
+            return code.split('\n').map(line => {
+                if (line.trim()) return line + ';' + junk;
+                return line;
+            }).join('\n');
+        }
+
+        // Minify: Remove comments and extra spaces
+        function minify(code) {
+            return code
+                .replace(/--.*$/gm, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Anti-tamper: Ultra-complex checks
+        function addAntiTamper(code) {
+            const checks = [
+                `if not getfenv then error("${generateRandomName(18)}") end`,
+                `if debug.getinfo then local _nested = math.tan(${Math.random().toFixed(4)}); error("${generateRandomName(15)}") end`,
+                `local _ = ${generateRandomName()}; if _G[_] then error("${generateRandomName(18)}") end`,
+                `local _x = math.random(); if _x * 0 ~= 0 then error("${generateRandomName(20)}") end`,
+                `if getmetatable({}) then local _mt = getmetatable; error("${generateRandomName(15)}") end`,
+                `local _s = debug.getinfo(1); if _s.short_src then error("${generateRandomName(18)}") end`,
+                `local _stack = debug.traceback(); if #_stack > 15 then error("${generateRandomName(20)}") end`,
+                `local _r = math.random(); if _r == ${Math.random().toFixed(4)} then error("${generateRandomName(16)}") end`
+            ];
+            const selectedChecks = checks.sort(() => Math.random() - 0.5).slice(0, 5); // Random 5 checks
+            return selectedChecks.join('\n') + '\n' + code;
+        }
+
+        // Fake VM dispatch (ultra-complex)
+        function addFakeVM(code) {
+            const vmTable = `local _vm = {${Array(8).fill().map(() => `["${generateRandomName(12)}"] = function() local _inner = "${generateRandomName(20)}"; return function() return _inner; end end`).join(', ')}}; _vm["${generateRandomName()}"]();`;
+            return vmTable + '\n' + code;
+        }
+
+        // Nested virtualization
+        function addVirtualization(code) {
+            const vm1 = generateRandomName();
+            const vm2 = generateRandomName();
+            const stateVar = generateRandomName();
+            return `local ${vm1} = {exec = function(c) local ${stateVar} = "${generateRandomName()}"; if ${stateVar} == "${stateVar}" then local ${vm2} = {run = function(d) loadstring(d)(); end}; ${vm2}.run(c); end end}; ${vm1}.exec("${asciiEncode(code)}");`;
+        }
+
+        // Main obfuscate function
+        function obfuscate() {
+            const input = document.getElementById('input').value;
+            if (!input) {
+                alert('Nhập code Luau đi bro!');
+                return;
+            }
+
+            try {
+                // Syntax check
+                const endCount = (input.match(/\bend\b/g) || []).length;
+                const blockStarters = (input.match(/\b(function|if|for|while|repeat)\b/g) || []).length;
+                const tableOpen = (input.match(/\{/g) || []).length;
+                const tableClose = (input.match(/\}/g) || []).length;
+                if (endCount < blockStarters || tableOpen !== tableClose) {
+                    alert('Code có thể lỗi syntax, check "end" hoặc "{}"!');
+                }
+
+                // Obfuscation layers
+                const layers = ['rename', 'flatten', 'minify', 'noise', 'antitamper', 'fakevm', 'virtualization', 'fakebytecode'];
+                // Shuffle layers
+                for (let i = layers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [layers[i], layers[j]] = [layers[j], layers[i]];
+                }
+
+                let code = input;
+                // Apply layers
+                for (const layer of layers) {
+                    if (layer === 'rename') code = renameVariables(code);
+                    else if (layer === 'flatten') code = flattenControlFlow(code);
+                    else if (layer === 'minify') code = minify(code);
+                    else if (layer === 'noise') code = addNoise(code);
+                    else if (layer === 'antitamper') code = addAntiTamper(code);
+                    else if (layer === 'fakevm') code = addFakeVM(code);
+                    else if (layer === 'virtualization') code = addVirtualization(code);
+                    else if (layer === 'fakebytecode') code = addFakeBytecode(code);
+                }
+
+                // Generate junk code
+                const junk = generateJunkCode(code.length);
+                
+                // Create output with obfuscated code first, then junk code, all on one line
+                const randomFuncName = generateRandomName(8);
+                const encoded = asciiEncode(code);
+                let output = `function ${randomFuncName}(...) return loadstring("${encoded}")(...) end; ${randomFuncName}(); ${junk}`;
+                
+                // Ensure everything is on one line
+                output = output.replace(/\n/g, '; ');
+
+                document.getElementById('output').textContent = output;
+            } catch (err) {
+                alert('Lỗi rồi bro: ' + err.message);
+            }
+        }
+
+        // Copy output to clipboard
+        function copyOutput() {
+            const output = document.getElementById('output').textContent;
+            if (!output) {
+                alert('Chưa có output để copy!');
+                return;
+            }
+            navigator.clipboard.writeText(output).then(() => {
+                alert('Đã copy output!');
+            }).catch(err => {
+                alert('Lỗi copy: ' + err.message);
+            });
+        }
+    </script>
+</body>
+</html>
