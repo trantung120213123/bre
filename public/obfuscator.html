@@ -1,265 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PBF Luau Obfuscator Cực Xịn Pro</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Lua/Luau Obfuscator - Luex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { transition: all 0.3s ease; background-color: #1a1a1a; }
-        #input, #output { white-space: pre-wrap; font-family: monospace; overflow-y: auto; max-height: 300px; }
-        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .tooltip { position: relative; }
-        .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; }
-        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        body{background:linear-gradient(135deg,#1e3a8a,#3b82f6);min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:Inter,sans-serif;padding:1rem}
+        .container{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:1rem;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:1.5rem sm:p-2rem;max-width:900px;width:100%}
+        textarea{resize:none;transition:all .3s ease;font-size:0.9rem}
+        textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.3)}
+        button{transition:all .3s ease}
+        button:hover{transform:translateY(-2px)}
+        .copy-btn:hover svg{transform:scale(1.1)}
+        .logo-container{display:flex;justify-content:center;margin-bottom:1rem}
+        .logo-text{font-size:2rem;font-weight:900;background:linear-gradient(45deg,#3b82f6,#10b981);-webkit-background-clip:text;color:transparent;text-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .3s ease}
+        .logo-text:hover{transform:scale(1.05)}
+        @media (max-width:640px){.container{padding:1rem}.text-3xl{font-size:1.5rem}.text-sm{font-size:0.8rem}textarea{font-size:0.8rem;padding:0.5rem}.grid-cols-1{gap:1rem}.flex-col{gap:1rem}}
     </style>
 </head>
-<body class="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
-    <div class="w-full max-w-4xl animate-fade-in">
-        <h1 class="text-4xl font-extrabold text-center bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text mb-6">PBF Luau Obfuscator Cực Xịn Pro</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo-text">Luex</div>
+        </div>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Obfuscator Lua/Luau ASCII</h1>
+        <p class="text-center text-sm text-gray-600 mb-4">Che giấu logic mã, ngăn chặn đánh cắp, tăng độ khó phân tích ngược</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-lg font-semibold mb-2">Input Code Luau</label>
-                <textarea id="input" class="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="Paste code Luau đây... e.g., print('Hello Luau!')"></textarea>
+                <label for="inputCode" class="block text-sm font-medium text-gray-700 mb-2">Mã Lua/Luau Đầu Vào</label>
+                <textarea id="inputCode" rows="10" class="w-full p-3 border rounded-lg focus:outline-none" placeholder="Nhập mã Lua/Luau của bạn tại đây..."></textarea>
             </div>
             <div>
-                <label class="block text-lg font-semibold mb-2">Output Obfuscated</label>
-                <div id="output" class="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg font-mono text-white"></div>
+                <label for="outputCode" class="block text-sm font-medium text-gray-700 mb-2">Mã Đã Obfuscate</label>
+                <textarea id="outputCode" rows="10" class="w-full p-3 border rounded-lg bg-gray-50" readonly placeholder="Mã đã obfuscate sẽ hiển thị tại đây..."></textarea>
+                <button id="copyBtn" class="mt-2 flex items-center justify-center w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 copy-btn">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Sao Chép
+                </button>
             </div>
         </div>
-        <div class="flex space-x-4 my-6 justify-center">
-            <div class="tooltip">
-                <button onclick="obfuscate()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition transform hover:scale-105 animate-pulse">Obfuscate!</button>
-                <span class="tooltiptext">Bấm để obfuscate code của bạn</span>
+        <div class="flex flex-col md:flex-row justify-between mt-6 gap-4">
+            <div class="flex-1">
+                <label for="obfLevel" class="block text-sm font-medium text-gray-700 mb-2">Mức Độ Obfuscate</label>
+                <select id="obfLevel" class="w-full p-3 border rounded-lg focus:outline-none">
+                    <option value="1">1 (Cơ bản)</option>
+                    <option value="2">2 (Trung bình)</option>
+                    <option value="3">3 (Mạnh)</option>
+                    <option value="4">4 (Rất mạnh)</option>
+                    <option value="5">5 (Cực mạnh)</option>
+                    <option value="6">6 (Siêu mạnh)</option>
+                    <option value="7">7 (Điên rồ)</option>
+                    <option value="8">8 (Ác mộng)</option>
+                    <option value="9">9 (Bất khả thi)</option>
+                    <option value="10">10 (Thần thánh)</option>
+                </select>
             </div>
-            <div class="tooltip">
-                <button onclick="copyOutput()" class="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition transform hover:scale-105">Copy Output</button>
-                <span class="tooltiptext">Bấm để copy output</span>
+            <div class="flex-1 flex items-center">
+                <input type="checkbox" id="addJunk" class="mr-2">
+                <label for="addJunk" class="text-sm font-medium text-gray-700">Thêm Junk Code</label>
             </div>
         </div>
-        <footer class="mt-8 text-center text-gray-400 text-base">
-            <p>PBF Obfuscator giúp che giấu mã nguồn, bảo vệ script game Roblox khỏi bị đánh cắp hoặc reverse-engineer. Chỉ sử dụng cho mục đích hợp pháp.</p>
-        </footer>
+        <div class="flex justify-center mt-6">
+            <button id="obfuscateBtn" class="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600">Obfuscate</button>
+        </div>
     </div>
-
     <script>
-        // Random name generator
-        function generateRandomName(len = 14) {
-            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            let name = '';
-            for (let i = 0; i < len; i++) {
-                name += chars[Math.floor(Math.random() * chars.length)];
+        function obfuscateToAscii(code) {
+            const encoder = new TextEncoder();
+            const bytes = encoder.encode(code);
+            let result = '';
+            for (let byte of bytes) {
+                result += `\\${byte}`;
             }
-            return name;
+            return `loadstring("${result}")()`;
         }
 
-        // Polymorphic ASCII encode (more variants)
-        function asciiEncode(code) {
-            return code.split('').map(c => {
-                const codeVal = c.charCodeAt(0);
-                const rand = Math.floor(Math.random() * 6);
-                const offset = Math.floor(Math.random() * 7) + 1;
-                if (rand === 0) return `\\${codeVal}`;
-                if (rand === 1) return `\\${codeVal - offset}+${offset}`;
-                if (rand === 2) return `(${codeVal - offset}+${offset})`;
-                if (rand === 3) return `(${-offset}+${codeVal + offset})`;
-                if (rand === 4) return `math.ceil(${codeVal - 0.5}+0.5)`;
-                return `tonumber("${codeVal}")`;
-            }).join('');
-        }
-
-        // Rename variables (more keywords)
-        function renameVariables(code) {
-            const varMap = {
-                'local': generateRandomName(),
-                'player': generateRandomName(),
-                'print': generateRandomName(8),
-                'game': generateRandomName(),
-                'function': generateRandomName(),
-                'Players': generateRandomName(),
-                'script': generateRandomName(),
-                'require': generateRandomName(),
-                'getfenv': generateRandomName(),
-                'Instance': generateRandomName(),
-                'workspace': generateRandomName()
-            };
-            let result = code;
-            for (const [oldVar, newVar] of Object.entries(varMap)) {
-                const regex = new RegExp(`\\b${oldVar}\\b`, 'g');
-                result = result.replace(regex, newVar);
-            }
-            return result;
-        }
-
-        // Dynamic control flow flattening (more complex)
-        function flattenControlFlow(code) {
-            const stateVar = generateRandomName();
-            const dispatchVar = generateRandomName();
-            const states = [generateRandomName(), generateRandomName()];
-            let result = code;
-            
-            // Replace if statements
-            result = result.replace(/if\s+(\w+)\s+then/g, `local ${stateVar} = $1; local ${dispatchVar} = {["${states[0]}"] = function()`);
-            
-            // Replace while loops
-            result = result.replace(/while\s+(\w+)\s+do/g, `local ${stateVar} = $1; local ${dispatchVar} = {["${states[1]}"] = function()`);
-            
-            // Replace for loops
-            result = result.replace(/for\s+(\w+)\s*=\s*(\d+)\s*,\s*(\d+)\s+do/g, `local ${stateVar} = $1; local ${dispatchVar} = {["loop"] = function()`);
-            
-            // Replace end statements
-            result = result.replace(/end/g, `end;}; ${dispatchVar}[tostring(${stateVar}) or "loop"]()`);
-            
-            return `local _stateMgr = "${generateRandomName()}";\n` + result;
-        }
-
-        // Fake bytecode injection
-        function addFakeBytecode(code) {
-            const fakeBytes = Array(5).fill().map(() => `\\x${Math.floor(Math.random() * 255).toString(16).padStart(2, '0')}`).join('');
-            return `local _bc = "${fakeBytes}"; -- fake bytecode\n` + code;
-        }
-
-        // Generate ultra-complex junk code
-        function generateJunkCode(inputLength) {
-            const junkLength = Math.floor(inputLength * 0.5);
+        function generateJunkCode(targetLength) {
+            const junkTemplates = [
+                `local f${Math.floor(Math.random()*1000)}=function() end`,
+                `local mathJunk${Math.floor(Math.random()*1000)}=math.sin(math.pi*math.random())+math.cos(math.random()*2);`,
+                `if math.random()>0.5 then local a=math.floor(math.random()*100)^math.random(); else end`,
+                `for i=1,${Math.floor(Math.random()*10)} do local b=(i*math.random())%math.pi; end`,
+                `local v${Math.floor(Math.random()*1000)}=${Math.random()>0.5?'true':'false'}; local c=v and math.log(math.random()+1) or math.exp(math.random());`,
+                `if false then elseif true then local d=math.sqrt(math.random()*100)-math.tan(math.random()); end`,
+                `while false do local e=math.abs(math.random()-0.5)*math.rad(math.random()*360); end`,
+                `repeat local f=math.ceil(math.random()*10)+math.floor(math.random()*10); until true;`,
+                `local t${Math.floor(Math.random()*1000)}={}; t.junk=math.deg(math.asin(math.random()));`,
+                `local g=math.pow(math.random(),math.random())*math.atan(math.random());`,
+                `if math.random()<0.3 then local h=math.sinh(math.random())+math.cosh(math.random()); elseif math.random()>0.7 then local i=math.tanh(math.random()); end`,
+                `local addJunk${Math.floor(Math.random()*1000)}=math.random(1,100)+math.random(1,100)-math.random(1,50);`,
+                `local subJunk${Math.floor(Math.random()*1000)}=math.random(100,200)-math.random(50,100)+math.random(1,10);`,
+                `local mulJunk${Math.floor(Math.random()*1000)}=math.random()*math.random(2,5)+math.random(0.1,1);`,
+                `local divJunk${Math.floor(Math.random()*1000)}=math.random(10,100)/math.random(1,5)-math.random(0.5,2);`,
+                `local mixedOp1${Math.floor(Math.random()*1000)}=(math.random()+math.random())*(math.random()-math.random());`,
+                `local mixedOp2${Math.floor(Math.random()*1000)}=math.random(5,10)/math.random(1,3)+math.random()*math.random(0,1);`,
+                `if math.random()>0.4 then local j=(math.random()*10)+(math.random()/2)-3; end`,
+                `for k=1,${Math.floor(Math.random()*5)} do local l=k+math.random()-math.random()*k; end`,
+                `local tableJunk${Math.floor(Math.random()*1000)}={math.random()+1, math.random()-0.5, math.random()*2 / 3};`,
+                `local strJunk${Math.floor(Math.random()*1000)}=tostring(math.random(1000)) .. tostring(math.random(1,10)+5);`,
+                `local numJunk${Math.floor(Math.random()*1000)}=tonumber(""..math.random(1,9)) - math.random(0.1,0.9);`,
+                `repeat local m=math.random()*math.random()+math.random()-math.random()/math.random(); until false;`,
+                `while math.random()<0.1 do local n=math.pi + math.e - math.random()*math.tau; end`,
+                `local funcJunk${Math.floor(Math.random()*1000)}=function(x) return x + math.random() - x * math.random(); end;`,
+                `local condJunk${Math.floor(Math.random()*1000)}=math.random()>0.5 and (1+2-3*4/5) or (6-7+8/9*10);`,
+                `local loopJunk${Math.floor(Math.random()*1000)}=0; for _=1,3 do loopJunk=loopJunk + math.random(1,2) - 1; end;`,
+                `local arrayJunk${Math.floor(Math.random()*1000)}={}; for i=1,4 do arrayJunk[i]=i*math.random() - i + math.random(); end;`,
+                `if true then local o=(math.random()+math.random()-math.random())*math.random()/math.random(); end`,
+                `local p=math.random(100); p = p + math.random(1,10) - math.random(5,15) * math.random(0.5,2) / math.random(1,3);`
+            ];
             let junk = '';
-            const junkTypes = [
-                () => `local ${generateRandomName()} = ${Math.floor(Math.random() * 1000) + Math.random().toFixed(4)}`,
-                () => `for _=1,${Math.floor(Math.random() * 5) + 1} do local _${generateRandomName()} = math.sin(${Math.random().toFixed(4)}) * 0; if false then end; end`,
-                () => `if false then ${generateRandomName()} = {nested={${Math.random().toFixed(4)},${Math.random().toFixed(4)}}}; end`,
-                () => `function ${generateRandomName()}(...) local _ = "${generateRandomName(20)}"; return (function() return _; end)(); end`,
-                () => `local _t = {${Array(6).fill().map(() => `{val=${Math.random().toFixed(4)},id="${generateRandomName(10)}"}`).join(', ')}}`,
-                () => `local _bc = "${generateRandomName(30)}"; -- fake bytecode complex`,
-                () => `local _up = getfenv().${generateRandomName()}; if _up then local _nested = {${Math.random().toFixed(4)}}; end`,
-                () => `local _mt = setmetatable({}, {__index = function() return "${generateRandomName(15)}"; end})`,
-                () => `local _closure = (function() return math.random() * 0 + "${generateRandomName(12)}"; end)()`
-            ];
-            let currentLength = 0;
-            while (currentLength < junkLength) {
-                const junkLine = junkTypes[Math.floor(Math.random() * junkTypes.length)]();
-                junk += junkLine + ';';
-                currentLength += junkLine.length;
+            const usedTemplates = new Set();
+            while (junk.length < targetLength) {
+                let templateIndex = Math.floor(Math.random() * junkTemplates.length);
+                while (usedTemplates.has(templateIndex)) {
+                    templateIndex = Math.floor(Math.random() * junkTemplates.length);
+                }
+                usedTemplates.add(templateIndex);
+                const template = junkTemplates[templateIndex];
+                junk += template + ' ';
+                if (usedTemplates.size === junkTemplates.length) {
+                    usedTemplates.clear();
+                }
             }
-            return junk;
+            return junk.slice(0, targetLength*2).trim();
         }
 
-        // Add noise (inline junk with ;)
-        function addNoise(code) {
-            const junk = generateJunkCode(code.length);
-            return code.split('\n').map(line => {
-                if (line.trim()) return line + ';' + junk;
-                return line;
-            }).join('\n');
+        function minifyLua(code) {
+            return code.replace(/\s+/g, ' ').replace(/\s*([=;{}()])\s*/g, '$1').trim();
         }
 
-        // Minify: Remove comments and extra spaces
-        function minify(code) {
-            return code
-                .replace(/--.*$/gm, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        // Anti-tamper: Ultra-complex checks
-        function addAntiTamper(code) {
-            const checks = [
-                `if not getfenv then error("${generateRandomName(18)}") end`,
-                `if debug.getinfo then local _nested = math.tan(${Math.random().toFixed(4)}); error("${generateRandomName(15)}") end`,
-                `local _ = ${generateRandomName()}; if _G[_] then error("${generateRandomName(18)}") end`,
-                `local _x = math.random(); if _x * 0 ~= 0 then error("${generateRandomName(20)}") end`,
-                `if getmetatable({}) then local _mt = getmetatable; error("${generateRandomName(15)}") end`,
-                `local _s = debug.getinfo(1); if _s.short_src then error("${generateRandomName(18)}") end`,
-                `local _stack = debug.traceback(); if #_stack > 15 then error("${generateRandomName(20)}") end`,
-                `local _r = math.random(); if _r == ${Math.random().toFixed(4)} then error("${generateRandomName(16)}") end`
-            ];
-            const selectedChecks = checks.sort(() => Math.random() - 0.5).slice(0, 5); // Random 5 checks
-            return selectedChecks.join('\n') + '\n' + code;
-        }
-
-        // Fake VM dispatch (ultra-complex)
-        function addFakeVM(code) {
-            const vmTable = `local _vm = {${Array(8).fill().map(() => `["${generateRandomName(12)}"] = function() local _inner = "${generateRandomName(20)}"; return function() return _inner; end end`).join(', ')}}; _vm["${generateRandomName()}"]();`;
-            return vmTable + '\n' + code;
-        }
-
-        // Nested virtualization
-        function addVirtualization(code) {
-            const vm1 = generateRandomName();
-            const vm2 = generateRandomName();
-            const stateVar = generateRandomName();
-            return `local ${vm1} = {exec = function(c) local ${stateVar} = "${generateRandomName()}"; if ${stateVar} == "${stateVar}" then local ${vm2} = {run = function(d) loadstring(d)(); end}; ${vm2}.run(c); end end}; ${vm1}.exec("${asciiEncode(code)}");`;
-        }
-
-        // Main obfuscate function
-        function obfuscate() {
-            const input = document.getElementById('input').value;
-            if (!input) {
-                alert('Nhập code Luau đi bro!');
+        document.getElementById('obfuscateBtn').addEventListener('click', () => {
+            const inputCode = document.getElementById('inputCode').value;
+            if (!inputCode.trim()) {
+                alert('Vui lòng nhập mã Lua/Luau để obfuscate!');
                 return;
             }
+            const level = parseInt(document.getElementById('obfLevel').value);
+            const addJunk = document.getElementById('addJunk').checked;
 
+            let obfuscated = inputCode;
+            for (let i = 0; i < level; i++) {
+                obfuscated = obfuscateToAscii(obfuscated);
+            }
+
+            if (addJunk) {
+                const junkLength = obfuscated.length;
+                const junk = generateJunkCode(junkLength);
+                obfuscated += ' ' + junk;
+            }
+
+            document.getElementById('outputCode').value = minifyLua(obfuscated);
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const outputCode = document.getElementById('outputCode');
+            outputCode.select();
             try {
-                // Syntax check
-                const endCount = (input.match(/\bend\b/g) || []).length;
-                const blockStarters = (input.match(/\b(function|if|for|while|repeat)\b/g) || []).length;
-                const tableOpen = (input.match(/\{/g) || []).length;
-                const tableClose = (input.match(/\}/g) || []).length;
-                if (endCount < blockStarters || tableOpen !== tableClose) {
-                    alert('Code có thể lỗi syntax, check "end" hoặc "{}"!');
-                }
-
-                // Obfuscation layers
-                const layers = ['rename', 'flatten', 'minify', 'noise', 'antitamper', 'fakevm', 'virtualization', 'fakebytecode'];
-                // Shuffle layers
-                for (let i = layers.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [layers[i], layers[j]] = [layers[j], layers[i]];
-                }
-
-                let code = input;
-                // Apply layers
-                for (const layer of layers) {
-                    if (layer === 'rename') code = renameVariables(code);
-                    else if (layer === 'flatten') code = flattenControlFlow(code);
-                    else if (layer === 'minify') code = minify(code);
-                    else if (layer === 'noise') code = addNoise(code);
-                    else if (layer === 'antitamper') code = addAntiTamper(code);
-                    else if (layer === 'fakevm') code = addFakeVM(code);
-                    else if (layer === 'virtualization') code = addVirtualization(code);
-                    else if (layer === 'fakebytecode') code = addFakeBytecode(code);
-                }
-
-                // Generate junk code
-                const junk = generateJunkCode(code.length);
-                
-                // Create output with obfuscated code first, then junk code, all on one line
-                const randomFuncName = generateRandomName(8);
-                const encoded = asciiEncode(code);
-                let output = `function ${randomFuncName}(...) return loadstring("${encoded}")(...) end; ${randomFuncName}(); ${junk}`;
-                
-                // Ensure everything is on one line
-                output = output.replace(/\n/g, '; ');
-
-                document.getElementById('output').textContent = output;
+                document.execCommand('copy');
+                alert('Đã sao chép vào clipboard!');
             } catch (err) {
-                alert('Lỗi rồi bro: ' + err.message);
+                alert('Không thể sao chép!');
             }
-        }
-
-        // Copy output to clipboard
-        function copyOutput() {
-            const output = document.getElementById('output').textContent;
-            if (!output) {
-                alert('Chưa có output để copy!');
-                return;
-            }
-            navigator.clipboard.writeText(output).then(() => {
-                alert('Đã copy output!');
-            }).catch(err => {
-                alert('Lỗi copy: ' + err.message);
-            });
-        }
+        });
     </script>
 </body>
 </html>
