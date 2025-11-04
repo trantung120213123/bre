@@ -1,0 +1,456 @@
+-- Luex Key Checker & Loader v3.0 - Full Xịn Sò Với http_request Executor + Red Logo!
+-- UI Cực Đẹp: Dark Neon Theme (Red Accent), Draggable, Animations Smooth AF
+-- Logo by Luex: Custom Red Neon "L" Icon (rbxassetid Placeholder - Upload PNG Tự Generate Để Dùng ID Thật)
+-- Buttons: "Luex Key - VERIFY NOW!" (Check Key) + "Get Key" (Copy Link: https://getkeyluex-5.onrender.com/)
+-- Nếu Valid: Auto Set getgenv().LuexKey = "1" + Load LuexHub Script + Close UI
+-- HTTP: Dùng http_request của Executor (Synapse/Krnl/Etc.) - Full Support POST JSON
+-- API: /verify-key (POST JSON) - Integrate Server Của Mày
+-- New: Auto-Paste Key from Clipboard on Input Focus (Cực Xịn - Pre-Write Key!)
+
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- API Config (Thay Bằng URL Server Của Mày - Local/Deploy/Supabase)
+local API_URL = "http://localhost:3000/verify-key"  -- Hoặc https://your-domain.com/verify-key
+
+-- Get Key Link
+local GET_KEY_LINK = "https://getkeyluex-5.onrender.com/"
+
+-- User Info Full (JSON Ready)
+local userId = tostring(player.UserId)
+local username = player.Name
+local displayName = player.DisplayName or username  -- Extra cho xịn
+
+-- Create ScreenGui (Anti-Reset)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Luex_KeyChecker_Red"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+
+-- Main Frame: Draggable, Neon Glow, Gradient Dark (Red Accent)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)  -- Ultra Dark
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 450, 0, 400)
+mainFrame.Active = true
+mainFrame.Draggable = true  -- Di Chuyển Được Rồi Ê!
+
+-- Smooth Corners
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 16)
+mainCorner.Parent = mainFrame
+
+-- Epic Gradient BG (Neon Red to Purple)
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 20, 30)),  -- Dark Red
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 30, 60)),  -- Purple-Red
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 40))  -- Dark Blue-Red
+}
+gradient.Rotation = 135
+gradient.Parent = mainFrame
+
+-- Neon Glow Stroke (Red Theme)
+local neonStroke = Instance.new("UIStroke")
+neonStroke.Color = Color3.fromRGB(255, 100, 100)  -- Neon Red Glow
+neonStroke.Thickness = 3
+neonStroke.Transparency = 0.3
+neonStroke.Parent = mainFrame
+
+-- Title Bar (Draggable Handle)
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Parent = mainFrame
+titleBar.BackgroundTransparency = 1
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+
+-- Title Text (Gotham Bold, Red Neon)
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Parent = titleBar
+titleLabel.BackgroundTransparency = 1
+titleLabel.Size = UDim2.new(1, -60, 1, 0)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "🛡️ Luex Key Authenticator (Red Edition)"
+titleLabel.TextColor3 = Color3.fromRGB(255, 150, 150)  -- Neon Red
+titleLabel.TextSize = 20
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.TextStrokeTransparency = 0.5
+titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+
+-- Close Button (Red Neon - Match Theme)
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "Close"
+closeButton.Parent = titleBar
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.BorderSizePixel = 0
+closeButton.Position = UDim2.new(1, -40, 0, 10)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.Text = "✕"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 18
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+
+local closeStroke = Instance.new("UIStroke")
+closeStroke.Color = Color3.fromRGB(255, 100, 100)
+closeStroke.Thickness = 1
+closeStroke.Parent = closeButton
+
+-- Logo by Luex (Cực Xịn: Red Neon "L" Icon - Upload PNG Tự Generate Để Dùng ID Thật)
+local logo = Instance.new("ImageLabel")
+logo.Name = "LuexLogo"
+logo.Parent = mainFrame
+logo.BackgroundTransparency = 1
+logo.Position = UDim2.new(0, 15, 0, 60)
+logo.Size = UDim2.new(0, 80, 0, 80)
+logo.Image = "rbxassetid://0"  -- PLACEHOLDER! Upload logo PNG đỏ neon "L" Luex → Lấy ID thật
+logo.ScaleType = Enum.ScaleType.Fit
+logo.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red Fallback BG
+
+local logoCorner = Instance.new("UICorner")
+logoCorner.CornerRadius = UDim.new(0, 40)  -- Circle-ish
+logoCorner.Parent = logo
+
+local logoStroke = Instance.new("UIStroke")
+logoStroke.Color = Color3.fromRGB(255, 100, 100)  -- Red Glow
+logoStroke.Thickness = 2
+logoStroke.Transparency = 0.4
+logoStroke.Parent = logo
+
+-- Key Input Box (Elegant, Placeholder Glow - Red Accent)
+local keyInput = Instance.new("TextBox")
+keyInput.Name = "KeyInput"
+keyInput.Parent = mainFrame
+keyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+keyInput.BorderSizePixel = 0
+keyInput.Position = UDim2.new(0, 105, 0, 60)
+keyInput.Size = UDim2.new(1, -120, 0, 45)
+keyInput.Font = Enum.Font.GothamSemibold
+keyInput.PlaceholderText = "🔑 Nhập Key Của Mày Vào Đây (key-ABCDE)..."
+keyInput.Text = ""
+keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyInput.TextSize = 15
+keyInput.ClearTextOnFocus = true
+keyInput.TextXAlignment = Enum.TextXAlignment.Left
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 10)
+inputCorner.Parent = keyInput
+
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(255, 100, 100)  -- Red Glow
+inputStroke.Thickness = 1.5
+inputStroke.Transparency = 0.2
+inputStroke.Parent = keyInput
+
+-- Luex Key Button (Cực Xịn: Neon Red, Pulse Animation)
+local getKeyButton = Instance.new("TextButton")
+getKeyButton.Name = "LuexKey"
+getKeyButton.Parent = mainFrame
+getKeyButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- Neon Red
+getKeyButton.BorderSizePixel = 0
+getKeyButton.Position = UDim2.new(0, 105, 0, 115)
+getKeyButton.Size = UDim2.new(1, -120, 0, 50)
+getKeyButton.Font = Enum.Font.GothamBold
+getKeyButton.Text = "🚀 Luex Key - VERIFY NOW!"
+getKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+getKeyButton.TextSize = 16
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 10)
+buttonCorner.Parent = getKeyButton
+
+local buttonStroke = Instance.new("UIStroke")
+buttonStroke.Color = Color3.fromRGB(255, 120, 120)  -- Red Glow
+buttonStroke.Thickness = 2
+buttonStroke.Parent = getKeyButton
+
+-- Get Key Button (Copy Link - Green Neon, Shift Down)
+local getLinkButton = Instance.new("TextButton")
+getLinkButton.Name = "GetKeyLink"
+getLinkButton.Parent = mainFrame
+getLinkButton.BackgroundColor3 = Color3.fromRGB(80, 200, 120)  -- Neon Green
+getLinkButton.BorderSizePixel = 0
+getLinkButton.Position = UDim2.new(0, 105, 0, 170)
+getLinkButton.Size = UDim2.new(1, -120, 0, 45)
+getLinkButton.Font = Enum.Font.GothamBold
+getLinkButton.Text = "📋 Get Key - Copy Link!"
+getLinkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+getLinkButton.TextSize = 14
+
+local linkButtonCorner = Instance.new("UICorner")
+linkButtonCorner.CornerRadius = UDim.new(0, 10)
+linkButtonCorner.Parent = getLinkButton
+
+local linkButtonStroke = Instance.new("UIStroke")
+linkButtonStroke.Color = Color3.fromRGB(100, 220, 140)
+linkButtonStroke.Thickness = 2
+linkButtonStroke.Parent = getLinkButton
+
+-- Status Label (Dynamic Color Change - Shift Down)
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "Status"
+statusLabel.Parent = mainFrame
+statusLabel.BackgroundTransparency = 1
+statusLabel.Position = UDim2.new(0, 15, 0, 230)
+statusLabel.Size = UDim2.new(1, -30, 0, 40)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Text = "⚡ Ready to authenticate your key! Auto-paste from clipboard on focus."
+statusLabel.TextColor3 = Color3.fromRGB(255, 150, 150)  -- Red-ish
+statusLabel.TextSize = 13
+statusLabel.TextWrapped = true
+statusLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+-- Loading Spinner (Shift Down)
+local loadingLabel = Instance.new("TextLabel")
+loadingLabel.Name = "Loading"
+loadingLabel.Parent = mainFrame
+loadingLabel.BackgroundTransparency = 1
+loadingLabel.Position = UDim2.new(0.5, -75, 0, 280)
+loadingLabel.Size = UDim2.new(0, 150, 0, 30)
+loadingLabel.Font = Enum.Font.GothamSemibold
+loadingLabel.Text = ""
+loadingLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+loadingLabel.TextSize = 14
+loadingLabel.Visible = false
+
+-- User Info Panel (Shift Down)
+local infoFrame = Instance.new("Frame")
+infoFrame.Name = "InfoPanel"
+infoFrame.Parent = mainFrame
+infoFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+infoFrame.BorderSizePixel = 0
+infoFrame.Position = UDim2.new(0, 15, 0, 315)
+infoFrame.Size = UDim2.new(1, -30, 0, 75)
+
+local infoCorner = Instance.new("UICorner")
+infoCorner.CornerRadius = UDim.new(0, 8)
+infoCorner.Parent = infoFrame
+
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Name = "InfoText"
+infoLabel.Parent = infoFrame
+infoLabel.BackgroundTransparency = 1
+infoLabel.Size = UDim2.new(1, -10, 1, 0)
+infoLabel.Font = Enum.Font.Gotham
+infoLabel.Text = string.format([[
+👤 User: %s (%s)
+🆔 ID: %s
+📡 API: %s
+🔒 Secure JSON: key + user_id + username + display + timestamp
+🌐 HTTP: http_request (Executor Full Support)
+🔗 Get Key: %s
+🎨 Logo: Luex Red Edition - Auto-Paste Key!
+]], username, displayName, userId, API_URL, GET_KEY_LINK)
+infoLabel.TextColor3 = Color3.fromRGB(255, 180, 180)  -- Red Tint
+infoLabel.TextSize = 11
+infoLabel.TextWrapped = true
+infoLabel.TextYAlignment = Enum.TextYAlignment.Top
+infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Pulse Animation for Button (Xịn: Heartbeat Effect - Red)
+local pulseConnection
+local function startPulse()
+    pulseConnection = RunService.Heartbeat:Connect(function()
+        local alpha = math.sin(tick() * 3) * 0.5 + 0.5
+        buttonStroke.Transparency = 0.2 + (alpha * 0.3)
+    end)
+end
+startPulse()  -- Start on load
+
+-- Tween Utils (Smooth Animations)
+local function tweenElement(element, properties)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(element, tweenInfo, properties)
+    tween:Play()
+end
+
+-- Close Button Logic
+closeButton.MouseButton1Click:Connect(function()
+    if pulseConnection then pulseConnection:Disconnect() end
+    screenGui:Destroy()
+end)
+
+-- Hover Effects (Pro) - Verify Button (Red Theme)
+getKeyButton.MouseEnter:Connect(function()
+    tweenElement(getKeyButton, {BackgroundColor3 = Color3.fromRGB(255, 100, 100), Size = UDim2.new(1, -120, 0, 52)})
+end)
+
+getKeyButton.MouseLeave:Connect(function()
+    tweenElement(getKeyButton, {BackgroundColor3 = Color3.fromRGB(255, 80, 80), Size = UDim2.new(1, -120, 0, 50)})
+end)
+
+-- Hover Effects - Get Link Button
+getLinkButton.MouseEnter:Connect(function()
+    tweenElement(getLinkButton, {BackgroundColor3 = Color3.fromRGB(100, 220, 140), Size = UDim2.new(1, -120, 0, 47)})
+end)
+
+getLinkButton.MouseLeave:Connect(function()
+    tweenElement(getLinkButton, {BackgroundColor3 = Color3.fromRGB(80, 200, 120), Size = UDim2.new(1, -120, 0, 45)})
+end)
+
+closeButton.MouseEnter:Connect(function()
+    tweenElement(closeButton, {BackgroundColor3 = Color3.fromRGB(255, 120, 120), Size = UDim2.new(0, 32, 0, 32)})
+end)
+
+closeButton.MouseLeave:Connect(function()
+    tweenElement(closeButton, {BackgroundColor3 = Color3.fromRGB(255, 80, 80), Size = UDim2.new(0, 30, 0, 30)})
+end)
+
+-- Input Focus Glow + Auto-Paste from Clipboard (Cực Xịn - Pre-Write Key!)
+keyInput.Focused:Connect(function()
+    tweenElement(inputStroke, {Transparency = 0, Color = Color3.fromRGB(255, 100, 100)})  -- Red Glow
+    keyInput.PlaceholderText = ""
+    
+    -- Auto-Paste Key from Clipboard (Nếu Có)
+    pcall(function()
+        local clipboardText = getclipboard() or ""
+        if clipboardText:match("key%-") then  -- Check if looks like a key
+            keyInput.Text = clipboardText
+            statusLabel.Text = "📋 Auto-pasted key from clipboard! Ready to verify."
+            statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        end
+    end)
+end)
+
+keyInput.FocusLost:Connect(function(enterPressed)
+    tweenElement(inputStroke, {Transparency = 0.2, Color = Color3.fromRGB(255, 100, 100)})
+    if keyInput.Text == "" then
+        keyInput.PlaceholderText = "🔑 Nhập Key Của Mày Vào Đây (key-ABCDE)..."
+    end
+    if enterPressed then
+        getKeyButton.MouseButton1Click:Fire()  -- Enter to Verify
+    end
+end)
+
+-- Get Link Button Logic (Copy to Clipboard)
+getLinkButton.MouseButton1Click:Connect(function()
+    pcall(function()
+        setclipboard(GET_KEY_LINK)
+    end)
+    
+    -- UI Feedback
+    local oldText = statusLabel.Text
+    statusLabel.Text = "📋 Link copied to clipboard! Paste & open to get your key: " .. GET_KEY_LINK
+    statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)  -- Green Success
+    tweenElement(statusLabel, {TextColor3 = Color3.fromRGB(100, 255, 100)})
+    
+    wait(3)
+    statusLabel.Text = oldText
+    statusLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
+end)
+
+-- Core Verify Logic (Full JSON + http_request Executor)
+getKeyButton.MouseButton1Click:Connect(function()
+    local key = keyInput.Text:match("^%s*(.-)%s*$")  -- Trim
+   
+    if not key or key == "" then
+        tweenElement(statusLabel, {TextColor3 = Color3.fromRGB(255, 100, 100)})
+        statusLabel.Text = "❌ Lỗi: Nhập key đi bro! (Ví dụ: key-ABCDE)"
+        return
+    end
+   
+    -- UI Loading State
+    loadingLabel.Text = "🔄 Verifying Key..." .. string.rep(".", math.floor(tick() * 4) % 4)
+    loadingLabel.Visible = true
+    statusLabel.Text = "📤 Sending Secure JSON via http_request..."
+    statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)  -- Yellow Loading
+    getKeyButton.Text = "⏳ Authenticating..."
+    getKeyButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+   
+    -- Full JSON Payload (Cực Đầy Đủ)
+    local payload = {
+        key = key,
+        user_id = userId,
+        username = username,
+        display_name = displayName,  -- Extra
+        timestamp = os.time()  -- Anti-Tamper
+    }
+    local jsonPayload = HttpService:JSONEncode(payload)
+   
+    -- http_request Executor Call (Full POST JSON)
+    local requestData = {
+        Url = API_URL,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json",
+            ["User-Agent"] = "Luex-Red/3.0"  -- Updated UA
+        },
+        Body = jsonPayload
+    }
+   
+    local success, response = pcall(function()
+        return http_request(requestData)
+    end)
+   
+    if success and response.Success then
+        local decoded = HttpService:JSONDecode(response.Body)
+       
+        if decoded.valid then
+            statusLabel.Text = "✅ Key Validated! Loading LuexHub Scripts..."
+            statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)  -- Green Success
+           
+            -- Auto Load Luex Script (Nếu Đúng Key)
+            spawn(function()
+                pcall(function()
+                    getgenv().LuexKey = "1"
+                    loadstring(game:HttpGet('https://luexteamscript.vercel.app/luexhub'))()
+                end)
+            end)
+           
+            -- Success Animation + Close
+            tweenElement(mainFrame, {Size = UDim2.new(0, 450, 0, 400), BackgroundTransparency = 0.5})
+            wait(2)
+            if pulseConnection then pulseConnection:Disconnect() end
+            screenGui:Destroy()
+            return  -- Exit Success
+        else
+            statusLabel.Text = "❌ Invalid Key: " .. (decoded.reason or "Server Error - Check Logs")
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    else
+        local errMsg = response and response.Body or tostring(response)
+        statusLabel.Text = "🌐 http_request Error: " .. errMsg .. " (Check Executor/API?)"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 150, 100)
+    end
+   
+    -- Reset UI
+    loadingLabel.Visible = false
+    loadingLabel.Text = ""
+    getKeyButton.Text = "🚀 Luex Key - VERIFY NOW!"
+    getKeyButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+end)
+
+-- Dynamic Loading Dots (Loop)
+spawn(function()
+    while loadingLabel.Visible do
+        local dots = string.rep(".", math.floor(tick() * 4) % 4)
+        loadingLabel.Text = "🔄 Verifying Key..." .. dots
+        wait(0.25)
+    end
+end)
+
+-- Init Message
+print("🛡️ Luex Red Key Checker Loaded! Auto-paste on focus. Drag frame to move. VERIFY for LuexHub access.")
+statusLabel.Text = statusLabel.Text .. " | Logo by Luex Red - Xịn Sò! | Auto-Paste Ready."
+
+-- Cleanup on Player Leaving (Optional)
+Players.PlayerRemoving:Connect(function(plr)
+    if plr == player and screenGui then
+        screenGui:Destroy()
+    end
+end)
