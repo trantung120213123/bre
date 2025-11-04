@@ -1,6 +1,6 @@
 -- Luex UI (Enhanced) | Aesthetic red-black translucent UI, draggable, minimize-to-logo
 -- SAFE: purely client UI + local animations
--- WIDE VERSION with Improved Server Hop + Auto Save Config
+-- WIDE VERSION with Improved Server Hop + Auto Save Config + Position Modes (Behind/Under/Circle)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -22,7 +22,10 @@ local Config = {
     ServerHopOn = false,
     SafeZoneOn = false,
     AutoRefreshOn = false,
-    UIPosition = {0.05, 0, 0.12, 0}
+    UIPosition = {0.05, 0, 0.12, 0},
+    PositionMode = "Behind",  -- Default position mode
+    StealthOn = false,  -- Stealth mode for ultra hidden
+    SpeedBoostOn = false  -- Speed boost feature
 }
 
 -- Load saved config
@@ -55,10 +58,10 @@ screen.Name = "LuexUI"
 screen.ResetOnSpawn = false
 screen.Parent = game.CoreGui
 
--- main container (WIDER)
+-- main container (WIDER, adjusted height)
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 600, 0, 420)
+main.Size = UDim2.new(0, 600, 0, 420)  -- Adjusted back for removed features
 main.Position = UDim2.new(unpack(Config.UIPosition))
 main.BackgroundColor3 = Color3.fromRGB(12,12,12)
 main.BackgroundTransparency = 0.18
@@ -228,10 +231,64 @@ stroke2.Color = Color3.fromRGB(200,20,20)
 stroke2.Transparency = 0.85
 stroke2.Thickness = 1.5
 
+-- Position Mode button (Cycle Behind/Under/Circle)
+local btnPositionMode = Instance.new("TextButton", leftColumn)
+btnPositionMode.Size = UDim2.new(1, 0, 0, 40)
+btnPositionMode.Position = UDim2.new(0, 0, 0, 138)
+btnPositionMode.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnPositionMode.BorderSizePixel = 0
+btnPositionMode.Text = "Position Mode: "..Config.PositionMode
+btnPositionMode.Font = Enum.Font.GothamBold
+btnPositionMode.TextSize = 16
+btnPositionMode.TextColor3 = Color3.fromRGB(240,240,240)
+btnPositionMode.AutoButtonColor = false
+
+-- hover glow
+local strokePosMode = Instance.new("UIStroke", btnPositionMode)
+strokePosMode.Color = Color3.fromRGB(200,20,20)
+strokePosMode.Transparency = 0.85
+strokePosMode.Thickness = 1.5
+
+-- Stealth Mode button
+local btnStealth = Instance.new("TextButton", leftColumn)
+btnStealth.Size = UDim2.new(1, 0, 0, 40)
+btnStealth.Position = UDim2.new(0, 0, 0, 184)
+btnStealth.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnStealth.BorderSizePixel = 0
+btnStealth.Text = "Stealth Mode: "..(Config.StealthOn and "ON" or "OFF")
+btnStealth.Font = Enum.Font.GothamBold
+btnStealth.TextSize = 16
+btnStealth.TextColor3 = Color3.fromRGB(240,240,240)
+btnStealth.AutoButtonColor = false
+
+-- hover glow
+local strokeStealth = Instance.new("UIStroke", btnStealth)
+strokeStealth.Color = Color3.fromRGB(200,20,20)
+strokeStealth.Transparency = 0.85
+strokeStealth.Thickness = 1.5
+
+-- Speed Boost button
+local btnSpeedBoost = Instance.new("TextButton", leftColumn)
+btnSpeedBoost.Size = UDim2.new(1, 0, 0, 40)
+btnSpeedBoost.Position = UDim2.new(0, 0, 0, 230)
+btnSpeedBoost.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnSpeedBoost.BorderSizePixel = 0
+btnSpeedBoost.Text = "Speed Boost: "..(Config.SpeedBoostOn and "ON" or "OFF")
+btnSpeedBoost.Font = Enum.Font.GothamBold
+btnSpeedBoost.TextSize = 16
+btnSpeedBoost.TextColor3 = Color3.fromRGB(240,240,240)
+btnSpeedBoost.AutoButtonColor = false
+
+-- hover glow
+local strokeSpeed = Instance.new("UIStroke", btnSpeedBoost)
+strokeSpeed.Color = Color3.fromRGB(200,20,20)
+strokeSpeed.Transparency = 0.85
+strokeSpeed.Thickness = 1.5
+
 -- Predict Direction button
 local btnPredict = Instance.new("TextButton", leftColumn)
 btnPredict.Size = UDim2.new(1, 0, 0, 40)
-btnPredict.Position = UDim2.new(0, 0, 0, 138)
+btnPredict.Position = UDim2.new(0, 0, 0, 276)
 btnPredict.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPredict.BorderSizePixel = 0
 btnPredict.Text = hasPremium and "Predict Direction: "..(Config.PredictOn and "ON" or "OFF") or "Predict Direction: PREMIUM"
@@ -249,7 +306,7 @@ stroke3.Thickness = 1.5
 -- Auto Server Hop button
 local btnServerHop = Instance.new("TextButton", leftColumn)
 btnServerHop.Size = UDim2.new(1, 0, 0, 40)
-btnServerHop.Position = UDim2.new(0, 0, 0, 184)
+btnServerHop.Position = UDim2.new(0, 0, 0, 322)
 btnServerHop.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnServerHop.BorderSizePixel = 0
 btnServerHop.Text = "Auto Server Hop: "..(Config.ServerHopOn and "ON" or "OFF")
@@ -267,7 +324,7 @@ stroke5.Thickness = 1.5
 -- Auto Safe Zone button
 local btnSafeZone = Instance.new("TextButton", leftColumn)
 btnSafeZone.Size = UDim2.new(1, 0, 0, 40)
-btnSafeZone.Position = UDim2.new(0, 0, 0, 230)
+btnSafeZone.Position = UDim2.new(0, 0, 0, 368)
 btnSafeZone.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSafeZone.BorderSizePixel = 0
 btnSafeZone.Text = hasPremium and "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF") or "Auto Safe Zone: PREMIUM"
@@ -342,7 +399,7 @@ stroke8.Color = Color3.fromRGB(200,20,20)
 stroke8.Transparency = 0.85
 stroke8.Thickness = 1.5
 
--- small hint text
+-- small hint text (updated)
 local hint = Instance.new("TextLabel", leftColumn)
 hint.Size = UDim2.new(1,0,0,28)
 hint.Position = UDim2.new(0,0,1,-28)
@@ -350,7 +407,7 @@ hint.BackgroundTransparency = 1
 hint.TextColor3 = Color3.fromRGB(200,200,200)
 hint.TextSize = 12
 hint.Font = Enum.Font.Gotham
-hint.Text = "Luex v2.0 | Improved Server Hop + Auto Save Config"
+hint.Text = "Luex v2.5 | Under Deep (-6 studs) + Stealth/SpeedBoost + Fixed Auto Kill"
 hint.TextWrapped = true
 
 -- logo animation: pulsing glow
@@ -365,7 +422,7 @@ glowStroke.Color = Color3.fromRGB(255, 80, 20)
 glowStroke.Transparency = 0.9
 glowStroke.Thickness = 6
 
--- store global refs
+-- store global refs (updated)
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
@@ -374,6 +431,9 @@ getgenv().LuexUI = {
     AutoBtn = btnAuto,
     AutoSelectedBtn = btnAutoSelected,
     ChangePlayerBtn = btnChangePlayer,
+    PositionModeBtn = btnPositionMode,
+    StealthBtn = btnStealth,
+    SpeedBoostBtn = btnSpeedBoost,
     PredictBtn = btnPredict,
     ServerHopBtn = btnServerHop,
     SafeZoneBtn = btnSafeZone,
@@ -447,16 +507,24 @@ local predictOn = Config.PredictOn
 local serverHopOn = Config.ServerHopOn
 local safeZoneOn = Config.SafeZoneOn
 local autoRefreshOn = Config.AutoRefreshOn
+local positionMode = Config.PositionMode
+local stealthOn = Config.StealthOn
+local speedBoostOn = Config.SpeedBoostOn
 local currentTarget = nil
 local highlightGui = nil
 local lastAttack = 0
 local lastFace = 0
+local lastPositionUpdate = 0
+local lastSpeedUpdate = 0
 local attackRate = 0.01
 local faceRate = 0.01
+local positionRate = 0.03
+local speedUpdateRate = 0.5
 local lastNoTargetNotify = 0
 local noTargetNotifyCooldown = 5
 local lastServerHopCheck = 0
-local serverHopCooldown = 10 -- Cooldown between server hop checks
+local serverHopCooldown = 10
+local circleAngle = 0
 
 -- Safe Zone variables
 local safePlatform = nil
@@ -477,7 +545,7 @@ local toolList = {
     "Earth Splitting Strike", "Last Breath"
 }
 
--- Improved notification system
+-- Improved notification system (unchanged)
 local activeNotifications = {}
 local maxNotifications = 3
 local notificationQueue = {}
@@ -506,7 +574,6 @@ local function processNotificationQueue()
     end
 end
 
--- Modern notification function
 local function notify(text, sec)
     sec = sec or 2.5
     if #activeNotifications >= maxNotifications then
@@ -592,7 +659,7 @@ local function notify(text, sec)
     end)
 end
 
--- highlight target
+-- highlight target (updated for mode)
 local function makeHighlight(player)
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
@@ -611,7 +678,7 @@ local function makeHighlight(player)
         label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 0.25
         label.BackgroundColor3 = Color3.fromRGB(40,5,5)
-        label.Text = "TARGET: "..player.Name
+        label.Text = "TARGET: "..player.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")
         label.TextColor3 = Color3.fromRGB(255,200,200)
         label.Font = Enum.Font.GothamBold
         label.TextSize = 14
@@ -627,7 +694,7 @@ local function clearHighlight()
     end)
 end
 
--- choose random player (excluding current target)
+-- choose random player (unchanged)
 local function chooseRandom()
     local pls = {}
     for _,p in pairs(Players:GetPlayers()) do
@@ -643,13 +710,13 @@ local function chooseRandom()
     return pls[math.random(1,#pls)]
 end
 
--- Get ping function
+-- Get ping function (unchanged)
 local function getPing()
     local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
     return math.clamp(ping, 0.05, 0.5)
 end
 
--- Enhanced prediction using velocity and ping
+-- Enhanced prediction (unchanged)
 local function predictTargetPosition(targetRoot)
     if not predictOn or not targetRoot then return targetRoot.Position end
     local ping = getPing()
@@ -662,21 +729,73 @@ local function predictTargetPosition(targetRoot)
     return targetRoot.Position
 end
 
--- SINGLE-STEP teleport function
-local function teleportBehindTargetStep()
-    if not currentTarget or not currentTarget.Character then return end
-    local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not hrp then return end
-
+-- UPDATED: Position mode functions (only Behind/Under/Circle, Under -6 studs)
+local function teleportToPosition(targetRoot, hrp)
     local targetPos = predictTargetPosition(targetRoot)
-    local moveDir = targetRoot.Velocity.Magnitude > 1 and targetRoot.Velocity.Unit or targetRoot.CFrame.LookVector
-    local newPos = targetPos - (moveDir * 3.5) + (targetRoot.CFrame.RightVector * 1.2)
-    hrp.CFrame = CFrame.lookAt(newPos, targetPos)
+    local radius = 5
+    local underOffset = Vector3.new(0, -6, 0)  -- UPDATED: Deeper -6 studs
+
+    if positionMode == "Behind" then
+        local moveDir = targetRoot.Velocity.Magnitude > 1 and targetRoot.Velocity.Unit or targetRoot.CFrame.LookVector
+        local newPos = targetPos - (moveDir * 3.5) + (targetRoot.CFrame.RightVector * 1.2)
+        hrp.CFrame = CFrame.lookAt(newPos, targetPos)
+    elseif positionMode == "Under" then
+        local newPos = targetPos + underOffset
+        hrp.CFrame = CFrame.lookAt(newPos, targetPos)
+    elseif positionMode == "Circle" then
+        circleAngle = circleAngle + math.rad(10)
+        local offset = Vector3.new(math.cos(circleAngle) * radius, 0, math.sin(circleAngle) * radius)
+        local newPos = targetPos + offset + underOffset * 0.5
+        hrp.CFrame = CFrame.lookAt(newPos, targetPos)
+    end
 end
 
--- SINGLE-STEP face target function
+-- Stealth function (transparency + no-clip like)
+local function toggleStealth()
+    local char = LocalPlayer.Character
+    if not char then return end
+    if stealthOn then
+        -- Enable stealth: semi-transparent + clip underground if Under
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0.7  -- Semi-transparent
+                part.CanCollide = false  -- No-clip
+            elseif part:IsA("Decal") or part:IsA("Texture") then
+                part.Transparency = 0.7
+            end
+        end
+        if positionMode == "Under" then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = hrp.CFrame + Vector3.new(0, -3, 0)  -- Extra deep
+            end
+        end
+        notify("Stealth ON: Semi-transparent + No-Clip!", 2)
+    else
+        -- Disable stealth
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0
+                part.CanCollide = true
+            elseif part:IsA("Decal") or part:IsA("Texture") then
+                part.Transparency = 0
+            end
+        end
+        notify("Stealth OFF", 1.5)
+    end
+end
+
+-- Speed Boost function
+local function speedBoostStep()
+    local char = LocalPlayer.Character
+    if not char or not speedBoostOn then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 50  -- Boost to 50 (default 16)
+    end
+end
+
+-- face target (unchanged)
 local function faceTargetStep()
     if not currentTarget or not currentTarget.Character then return end
     local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
@@ -686,7 +805,7 @@ local function faceTargetStep()
     hrp.CFrame = CFrame.lookAt(hrp.Position, predictTargetPosition(targetRoot))
 end
 
--- Enhanced spam tools attack
+-- spam attack (unchanged)
 local function spamAttack()
     if not currentTarget or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
@@ -727,7 +846,7 @@ local function spamAttack()
     end
 end
 
--- Auto Safe Zone Functions
+-- Auto Safe Zone Functions (unchanged)
 local function createSafePlatform()
     if not hasPremium then return end
     if safePlatform then return end
@@ -784,13 +903,12 @@ local function removeSafePlatform()
     end
 end
 
--- IMPROVED Server Hop Functions
+-- Server Hop Functions (unchanged)
 local PlaceId = game.PlaceId
 
 local function getServers(minPlayers, maxPlayers)
     local servers = {}
     local success, result = pcall(function()
-        -- Try multiple API endpoints for better reliability
         local urls = {
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100",
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100"
@@ -819,28 +937,25 @@ local function getServers(minPlayers, maxPlayers)
 end
 
 local function hopServer()
-    local minPlayers = 8  -- Minimum players for good server
-    local maxPlayers = 20 -- Maximum players to avoid full servers
+    local minPlayers = 8
+    local maxPlayers = 20
     
     local servers = getServers(minPlayers, maxPlayers)
     
     if #servers > 0 then
-        -- Sort by player count (prefer medium-populated servers)
         table.sort(servers, function(a, b)
-            return math.abs(a.playing - 12) < math.abs(b.playing - 12) -- Prefer around 12 players
+            return math.abs(a.playing - 12) < math.abs(b.playing - 12)
         end)
         
         local bestServer = servers[1]
         notify("Hopping to server with "..bestServer.playing.." players...", 3)
         
-        -- Try to teleport
         local success, err = pcall(function()
             TeleportService:TeleportToPlaceInstance(PlaceId, bestServer.id, LocalPlayer)
         end)
         
         if not success then
             notify("Server hop failed, trying alternative...", 2)
-            -- Try another server if first fails
             if #servers > 1 then
                 wait(2)
                 local altServer = servers[2]
@@ -848,7 +963,6 @@ local function hopServer()
             end
         end
     else
-        -- If no ideal servers found, try with broader criteria
         servers = getServers(3, 30)
         if #servers > 0 then
             local backupServer = servers[math.random(1, #servers)]
@@ -860,7 +974,7 @@ local function hopServer()
     end
 end
 
--- Player Selection Functions
+-- Player Selection Functions (unchanged)
 local function createPlayerButton(player, yPosition)
     local button = Instance.new("TextButton")
     button.Name = player.Name
@@ -887,9 +1001,9 @@ local function createPlayerButton(player, yPosition)
         local humanoid = player.Character:FindFirstChild("Humanoid")
         if humanoid then
             if humanoid.Health <= 0 then
-                statusIndicator.BackgroundColor3 = Color3.fromRGB(200, 30, 30)  -- Dead
+                statusIndicator.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
             else
-                statusIndicator.BackgroundColor3 = Color3.fromRGB(30, 200, 30)  -- Alive
+                statusIndicator.BackgroundColor3 = Color3.fromRGB(30, 200, 30)
             end
         end
     end
@@ -911,12 +1025,12 @@ local function createPlayerButton(player, yPosition)
     button.MouseButton1Click:Connect(function()
         if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("Humanoid").Health > 0 then
             currentTarget = player
-            notify("Selected: "..player.Name, 2)
+            notify("Selected: "..player.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
             makeHighlight(currentTarget)
             refreshPlayerList()
             
             if autoOn or autoSelectedOn then
-                teleportBehindTargetStep()
+                teleportToPosition(currentTarget.Character:FindFirstChild("HumanoidRootPart"), LocalPlayer.Character:FindFirstChild("HumanoidRootPart"))
                 faceTargetStep()
                 spamAttack()
             end
@@ -929,14 +1043,12 @@ local function createPlayerButton(player, yPosition)
 end
 
 local function refreshPlayerList()
-    -- Clear existing player list
     for _, child in ipairs(UI.PlayerList:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
         end
     end
     
-    -- Add players to list
     local yPosition = 0
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
@@ -945,7 +1057,6 @@ local function refreshPlayerList()
         end
     end
     
-    -- Update canvas size
     UI.PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
 end
 
@@ -955,27 +1066,65 @@ spawn(function()
         if autoRefreshOn then
             refreshPlayerList()
         end
-        wait(5)  -- Refresh every 5 seconds
+        wait(5)
     end
 end)
 
--- Optimized auto-kill loop
+-- Character respawn handler (for death/respawn)
+local function onCharacterAdded(char)
+    wait(1)  -- Wait for full load
+    -- Re-apply stealth if on
+    if stealthOn then
+        toggleStealth()
+    end
+    -- Re-apply speed boost if on
+    if speedBoostOn then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 50
+        end
+    end
+    -- Re-select target if auto on
+    if autoOn then
+        currentTarget = chooseRandom()
+        if currentTarget then
+            makeHighlight(currentTarget)
+            notify("Respawned! New target: "..currentTarget.Name, 2)
+        end
+    end
+    -- Refresh list
+    refreshPlayerList()
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- If character already loaded
+if LocalPlayer.Character then
+    onCharacterAdded(LocalPlayer.Character)
+end
+
+-- Optimized auto-kill loop (updated with new features)
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
 
-        -- IMPROVED Auto Server Hop Logic
+        -- Speed Boost
+        if tick() - lastSpeedUpdate > speedUpdateRate then
+            speedBoostStep()
+            lastSpeedUpdate = tick()
+        end
+
+        -- Server Hop
         if serverHopOn and tick() - lastServerHopCheck > serverHopCooldown then
             lastServerHopCheck = tick()
-            
             local playerCount = #Players:GetPlayers()
-            if playerCount < 5 then -- Increased minimum to 5 players
+            if playerCount < 5 then
                 notify("Server has only "..playerCount.." players, hopping...", 2)
                 hopServer()
             end
         end
 
-        -- Enhanced Auto Safe Zone Logic
+        -- Safe Zone
         if safeZoneOn and hasPremium then
             local character = LocalPlayer.Character
             if character then
@@ -996,60 +1145,84 @@ spawn(function()
             end
         end
 
-        -- Auto Kill Logic (Random Target)
-        if autoOn and not safePlatform then
-            if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 then
-                currentTarget = chooseRandom()
-                if currentTarget then
-                    notify("Selected random: "..currentTarget.Name, 1.8)
-                    makeHighlight(currentTarget)
-                    lastNoTargetNotify = 0
-                else
-                    if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
-                        notify("No valid targets found.", 1.8)
-                        lastNoTargetNotify = tick()
+        -- Auto Kill Random
+        if autoOn and not safePlatform and LocalPlayer.Character then
+            local char = LocalPlayer.Character
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then  -- Only if alive
+                if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 then
+                    currentTarget = chooseRandom()
+                    if currentTarget then
+                        notify("Selected random: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 1.8)
+                        makeHighlight(currentTarget)
+                        lastNoTargetNotify = 0
+                    else
+                        if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
+                            notify("No valid targets found.", 1.8)
+                            lastNoTargetNotify = tick()
+                        end
+                        clearHighlight()
                     end
-                    clearHighlight()
-                end
-            else
-                if tick() - lastAttack > attackRate then
-                    teleportBehindTargetStep()
-                    spamAttack()
-                    lastAttack = tick()
-                end
+                else
+                    local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
 
-                if tick() - lastFace > faceRate then
-                    faceTargetStep()
-                    lastFace = tick()
+                    if tick() - lastAttack > attackRate then
+                        teleportToPosition(targetRoot, hrp)
+                        spamAttack()
+                        lastAttack = tick()
+                    end
+
+                    if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot and hrp then
+                        teleportToPosition(targetRoot, hrp)
+                        lastPositionUpdate = tick()
+                    end
+
+                    if tick() - lastFace > faceRate then
+                        faceTargetStep()
+                        lastFace = tick()
+                    end
                 end
             end
         end
 
-        -- Auto Kill Selected Logic
-        if autoSelectedOn and not safePlatform then
-            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
-                if tick() - lastAttack > attackRate then
-                    teleportBehindTargetStep()
-                    spamAttack()
-                    lastAttack = tick()
-                end
+        -- Auto Kill Selected
+        if autoSelectedOn and not safePlatform and LocalPlayer.Character then
+            local char = LocalPlayer.Character
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then  -- Only if alive
+                if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
+                    local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
 
-                if tick() - lastFace > faceRate then
-                    faceTargetStep()
-                    lastFace = tick()
+                    if tick() - lastAttack > attackRate then
+                        teleportToPosition(targetRoot, hrp)
+                        spamAttack()
+                        lastAttack = tick()
+                    end
+
+                    if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot and hrp then
+                        teleportToPosition(targetRoot, hrp)
+                        lastPositionUpdate = tick()
+                    end
+
+                    if tick() - lastFace > faceRate then
+                        faceTargetStep()
+                        lastFace = tick()
+                    end
+                else
+                    if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
+                        notify("Selected target is not valid. Auto Kill paused.", 1.8)
+                        lastNoTargetNotify = tick()
+                    end
+                    clearHighlight()
                 end
-            else
-                if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
-                    notify("Selected target is not valid.", 1.8)
-                    lastNoTargetNotify = tick()
-                end
-                clearHighlight()
             end
         end
     end
 end)
 
--- Auto Kill Random button
+-- Button connections (updated)
 UI.AutoBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1067,7 +1240,7 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
         Config.AutoSelectedOn = false
         SaveConfig()
         
-        notify("Auto Kill Random enabled. Selecting target...", 2)
+        notify("Auto Kill Random enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
             notify("Target: "..currentTarget.Name, 2)
@@ -1081,7 +1254,6 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Auto Kill Selected button
 UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1100,7 +1272,7 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
         SaveConfig()
         
         if currentTarget then
-            notify("Auto Kill Selected enabled. Target: "..currentTarget.Name, 2)
+            notify("Auto Kill Selected enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
         else
             notify("Auto Kill Selected enabled. Please select a target first.", 2)
@@ -1115,7 +1287,6 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Change Player button
 UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
     local currentTargetName = currentTarget and currentTarget.Name or nil
     local players = {}
@@ -1132,12 +1303,14 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
 
     if #players > 0 then
         currentTarget = players[math.random(1, #players)]
-        notify("Changed target to: "..currentTarget.Name, 2)
+        notify("Changed target to: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
         makeHighlight(currentTarget)
         refreshPlayerList()
 
         if autoOn or autoSelectedOn then
-            teleportBehindTargetStep()
+            local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            teleportToPosition(targetRoot, hrp)
             faceTargetStep()
             spamAttack()
         end
@@ -1146,7 +1319,60 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Predict Direction button
+-- Updated Position Mode Cycle (now Behind/Under/Circle)
+UI.PositionModeBtn.MouseButton1Click:Connect(function()
+    if positionMode == "Behind" then
+        positionMode = "Under"
+    elseif positionMode == "Under" then
+        positionMode = "Circle"
+    else
+        positionMode = "Behind"
+    end
+    UI.PositionModeBtn.Text = "Position Mode: "..positionMode
+    Config.PositionMode = positionMode
+    SaveConfig()
+
+    notify("Position Mode: "..positionMode, 1.5)
+    if currentTarget then
+        makeHighlight(currentTarget)
+        local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if targetRoot and hrp then
+            teleportToPosition(targetRoot, hrp)
+        end
+    end
+end)
+
+-- Stealth Button
+UI.StealthBtn.MouseButton1Click:Connect(function()
+    stealthOn = not stealthOn
+    UI.StealthBtn.Text = "Stealth Mode: "..(stealthOn and "ON" or "OFF")
+    Config.StealthOn = stealthOn
+    SaveConfig()
+    toggleStealth()
+end)
+
+-- Speed Boost Button
+UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
+    speedBoostOn = not speedBoostOn
+    UI.SpeedBoostBtn.Text = "Speed Boost: "..(speedBoostOn and "ON" or "OFF")
+    Config.SpeedBoostOn = speedBoostOn
+    SaveConfig()
+    if speedBoostOn then
+        notify("Speed Boost enabled (50 speed)", 1.5)
+    else
+        local char = LocalPlayer.Character
+        if char then
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16  -- Reset to default
+            end
+        end
+        notify("Speed Boost disabled", 1.5)
+    end
+end)
+
+-- Other buttons (unchanged)
 UI.PredictBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Predict Direction requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1165,7 +1391,6 @@ UI.PredictBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Server Hop button
 UI.ServerHopBtn.MouseButton1Click:Connect(function()
     serverHopOn = not serverHopOn
     UI.ServerHopBtn.Text = "Auto Server Hop: "..(serverHopOn and "ON" or "OFF")
@@ -1179,7 +1404,6 @@ UI.ServerHopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Auto Safe Zone button
 UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Auto Safe Zone requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1208,13 +1432,11 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Refresh Players button
 UI.RefreshBtn.MouseButton1Click:Connect(function()
     refreshPlayerList()
     notify("Player list refreshed", 1.5)
 end)
 
--- Auto Refresh Toggle button
 UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
     autoRefreshOn = not autoRefreshOn
     UI.AutoRefreshToggle.Text = "Auto Refresh: "..(autoRefreshOn and "ON" or "OFF")
@@ -1229,7 +1451,33 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Animate crack lines
+-- Enhanced PlayerRemoving (better auto kill resume)
+Players.PlayerRemoving:Connect(function(p)
+    if currentTarget == p then
+        currentTarget = nil
+        notify("Target left the game. Auto Kill resuming...", 2)
+        clearHighlight()
+
+        if autoOn then
+            spawn(function()  -- Delay to avoid spam
+                wait(1)
+                currentTarget = chooseRandom()
+                if currentTarget then
+                    notify("New target: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
+                    makeHighlight(currentTarget)
+                end
+            end)
+        end
+    end
+    refreshPlayerList()
+end)
+
+Players.PlayerAdded:Connect(function(p)
+    wait(2)
+    refreshPlayerList()
+end)
+
+-- Animations (unchanged)
 spawn(function()
     while true do
         for i,child in ipairs(UI.Crack:GetChildren()) do
@@ -1241,7 +1489,6 @@ spawn(function()
     end
 end)
 
--- Pulsing logo glow
 spawn(function()
     while true do
         TweenService:Create(UI.Glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.75}):Play()
@@ -1251,33 +1498,11 @@ spawn(function()
     end
 end)
 
--- Initial player list refresh
+-- Initial refresh
 refreshPlayerList()
 
--- Cleanup
-Players.PlayerRemoving:Connect(function(p)
-    if currentTarget == p then
-        currentTarget = nil
-        notify("Target left the game", 2)
-        clearHighlight()
-
-        if autoOn then
-            currentTarget = chooseRandom()
-            if currentTarget then
-                notify("New target: "..currentTarget.Name, 2)
-                makeHighlight(currentTarget)
-            end
-        end
-    end
-    refreshPlayerList()
-end)
-
-Players.PlayerAdded:Connect(function(p)
-    wait(2) -- Wait for player to load
-    refreshPlayerList()
-end)
-
--- Manual Server Hop Function (can be called externally)
 getgenv().LuexHopServer = hopServer
 
-print("Luex Enhanced Combat System v2.0 with Improved Server Hop & Auto Save Config loaded")
+print("Luex Enhanced Combat System v2.5 with Deep Under (-6 studs) + Stealth/SpeedBoost loaded")
+
+-- Xong tiểu đệ, bỏ heal + deep/ultra under rồi, giờ chỉ Behind -> Under (-6 studs sâu hơn) -> Circle. Stealth + Speed vẫn xịn, UI gọn hơn, auto kill resume mượt luôn! Cực xịn sò 😈
