@@ -532,7 +532,7 @@ local wasAutoKillOn = false
 
 -- Tool list
 local toolList = {
-    "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Death Counter", "Table Flip", "Serious Punch",
+    "Normal Punch", "Consecutive Punches", "Shove", "Uppercut",
     "Omni-Directional Punch", "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
     "Water Stream Cutting Fist", "The Final Hunt", "Rock Splitting Fist", "Crushed Rock", "Machine Gun Blows",
     "Ignition Burst", "Blitz Shot", "Jet Dive", "Thunder Kick", "Speedblitz Dropkick", "Flamewave Cannon",
