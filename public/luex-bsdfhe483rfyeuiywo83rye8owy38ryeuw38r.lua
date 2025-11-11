@@ -1,6 +1,6 @@
--- Luex UI ULTRA v3.0 | Cycling Multi Kill + Auto Switch to Single on 1 Left + Immediate Attack Fix + Shared List + Neon Revert + Scrollable
--- ENHANCED: Multi cycles alternately (luân phiên) each target until <2, then auto-switch to Single | Must enable Multi to work | Fixed immediate attack on select (no bug, smooth teleport/spam) | Rest unchanged 😈💥
--- FIXED: Immediate attack only if Multi ON, inserts new at end for cycle order, cycles every 3s, auto-switch on 1 left
+-- Luex UI ULTRA v3.1 | Sequential Multi Kill (Attack #1 until dead -> #2 until <2) + Immediate Attack on Select + Shared List + Neon Revert + Scrollable
+-- ENHANCED: Multi kills SEQUENTIAL (đánh 1 ng chết mới đến ng thứ 2) until <2 or off | Must enable Multi | Click select = attack IMMEDIATE if Multi ON | Auto-disable invalid | Rest unchanged 😈💥
+-- FIXED: Removed cycling, always attack [1] until invalid/dead (remove & proceed), insert new at front for priority
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -323,7 +323,7 @@ hint.BackgroundTransparency = 1
 hint.TextColor3 = Color3.fromRGB(200,200,200)
 hint.TextSize = 11
 hint.Font = Enum.Font.Gotham
-hint.Text = "Luex ULTRA v3.0 | Cycling Multi (luân phiên until 1 left -> auto Single) + Immediate Attack Fix + Shared List + Neon Revert + Scrollable"
+hint.Text = "Luex ULTRA v3.1 | Sequential Multi (đánh 1 chết mới đến 2nd) + Immediate Attack + Shared List + Neon Revert + Scrollable"
 hint.TextWrapped = true
 -- Player Selection Title
 local playerTitle = Instance.new("TextLabel", rightColumn)
@@ -486,11 +486,8 @@ local noTargetNotifyCooldown = 5
 local lastServerHopCheck = 0
 local serverHopCooldown = 10
 local circleAngle = 0
--- Multi-select vars
+-- Multi-select vars (REMOVED cycling vars - sequential only [1])
 local selectedTargets = Config.SelectedTargets
-local currentMultiIndex = 1
-local lastSwitchTime = 0
-local switchRate = 3
 -- Safe Zone variables
 local safePlatform = nil
 local wasAutoKillOn = false
@@ -610,7 +607,7 @@ local function notify(text, sec)
         frame:Destroy()
     end)
 end
--- Toggle select (shared list, smooth color tween) - FIXED: Insert at END for cycle order, immediate attack if multiOn (fixed smooth)
+-- Toggle select (shared list, smooth color tween) - FIXED: Insert at FRONT for sequential priority (new = next after current)
 local function isSelected(player)
     for _, p in ipairs(selectedTargets) do
         if p == player then return true end
@@ -649,7 +646,6 @@ local function updateButtonColors(button, isSel, playerName)
     end
 end
 local function immediateAttack(player)
-    -- FIXED: Smooth immediate attack - teleport, face, spam without loop interrupt
     currentTarget = player
     local char = LocalPlayer.Character
     if not char then return end
@@ -657,17 +653,12 @@ local function immediateAttack(player)
     local tchar = player.Character
     if not tchar then return end
     local targetRoot = tchar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot or not hrp then return end
-    -- Smooth tween for position to avoid jitter
-    local targetPos = predictTargetPosition(targetRoot)
-    local newCFrame = CFrame.lookAt(hrp.Position, targetPos) -- Face first
-    hrp.CFrame = newCFrame
-    wait(0.1) -- Micro delay for smooth
-    teleportToPosition(targetRoot, hrp) -- Then position
-    faceTargetStep()
-    spamAttack() -- Attack
+    if hrp and targetRoot then
+        teleportToPosition(targetRoot, hrp)
+        faceTargetStep()
+        spamAttack()
+    end
     makeHighlight(player)
-    notify("Đánh ngay: " .. player.Name .. " (Multi ON) 💥", 1)
 end
 local function toggleSelect(player)
     if not player.Character or not player.Character:FindFirstChild("Humanoid") or player.Character:FindFirstChild("Humanoid").Health <= 0 then
@@ -683,34 +674,17 @@ local function toggleSelect(player)
     end
     local oldCount = #selectedTargets
     if foundIndex then
-        local removedIndex = foundIndex
         table.remove(selectedTargets, foundIndex)
-        -- Adjust index if multiOn
-        if multiOn then
-            if removedIndex < currentMultiIndex then
-                currentMultiIndex = currentMultiIndex - 1
-            elseif removedIndex == currentMultiIndex then
-                currentMultiIndex = currentMultiIndex % #selectedTargets + 1
-            end
-            if currentMultiIndex > #selectedTargets then
-                currentMultiIndex = 1
-            end
-        end
         notify("Deselected: " .. player.Name .. " (" .. #selectedTargets .. " left)", 1.5)
     else
-        -- FIXED: Insert at END for cycle order (luân phiên from start)
-        table.insert(selectedTargets, player)
+        -- FIXED: Insert at FRONT for priority (new target = next kill after current)
+        table.insert(selectedTargets, 1, player)
         notify("Selected: " .. player.Name .. " (" .. #selectedTargets .. " total)", 1.5)
-        -- FIXED: Immediate attack if Multi ON (only if enabled, smooth)
+        -- FIXED: Immediate attack if Multi ON
         if multiOn then
-            spawn(function() -- Spawn to avoid block
-                immediateAttack(player)
-            end)
+            immediateAttack(player)
+            notify("Multi ON: Đánh ngay target mới! 💥", 1.5)
         end
-    end
-    -- Adjust currentMultiIndex if needed
-    if currentMultiIndex > #selectedTargets then
-        currentMultiIndex = 1
     end
     Config.SelectedTargets = selectedTargets
     SaveConfig()
@@ -741,21 +715,8 @@ local function updateSelectedBtnsText()
     UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): " .. (autoSelectedOn and "ON" or "OFF")
     UI.MultiSelectedBtn.Text = "Multi Kill Selected: " .. (multiOn and "ON (" .. #selectedTargets .. ")" or "OFF")
 end
--- Get next alive target from selected list (skip dead, cycle with time)
-local function getNextTarget()
-    if #selectedTargets <= 0 then return nil end
-    local start = currentMultiIndex
-    repeat
-        local player = selectedTargets[currentMultiIndex]
-        if player and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            return player
-        else
-            currentMultiIndex = (currentMultiIndex % #selectedTargets) + 1
-        end
-    until currentMultiIndex == start
-    return nil
-end
--- highlight target (updated for modes)
+-- REMOVED: getNextTarget() - now always use selectedTargets[1] for sequential
+-- highlight target (updated for modes) - FIXED: Multi shows [MULTI 1/N sequential]
 local function makeHighlight(player)
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
@@ -772,7 +733,7 @@ local function makeHighlight(player)
         label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 0.25
         label.BackgroundColor3 = Color3.fromRGB(40,5,5)
-        local modeText = autoSelectedOn and " [SINGLE " .. positionMode .. "]" or (multiOn and " [MULTI #" .. currentMultiIndex .. "/" .. #selectedTargets .. " " .. positionMode .. "]" or " [" .. positionMode .. "]")
+        local modeText = autoSelectedOn and " [SINGLE " .. positionMode .. "]" or (multiOn and " [MULTI 1/" .. #selectedTargets .. " " .. positionMode .. "]" or " [" .. positionMode .. "]")
         modeText = modeText .. (stealthOn and " [STEALTH]" or "")
         label.Text = "TARGET: "..player.Name..modeText
         label.TextColor3 = Color3.fromRGB(255,200,200)
@@ -1194,7 +1155,7 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 if LocalPlayer.Character then
     onCharacterAdded(LocalPlayer.Character)
 end
--- Optimized auto-kill loop (ENHANCED: Multi cycle luân phiên, auto-switch to Single when ==1)
+-- Optimized auto-kill loop (FIXED: Multi sequential - attack [1] until dead/invalid, remove & proceed until <2)
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
@@ -1235,26 +1196,13 @@ spawn(function()
             continue
         end
         local hrp = char:FindFirstChild("HumanoidRootPart")
-        -- ENHANCED: Check for multi auto-switch if ==1
-        if multiOn and #selectedTargets == 1 then
-            multiOn = false
-            autoSelectedOn = true
-            UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
-            UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): ON"
-            Config.MultiOn = false
-            Config.AutoSelectedOn = true
-            SaveConfig()
-            currentTarget = selectedTargets[1]
-            notify("Multi -> Single auto-switch! Only 1 target left. Đánh luân phiên hoàn tất! 🔄➡️🎯", 2.5)
-            makeHighlight(currentTarget)
-        end
-        -- Check for multi disable if <2 (but ==1 handled above)
-        if multiOn and #selectedTargets < 1 then
+        -- Check for multi disable if <2
+        if multiOn and #selectedTargets < 2 then
             multiOn = false
             UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
             Config.MultiOn = false
             SaveConfig()
-            notify("Multi mode disabled - No targets left.", 2)
+            notify("Multi mode disabled - Less than 2 targets left. Hoàn tất kill! 💀", 2)
             clearHighlight()
             currentTarget = nil
         end
@@ -1317,11 +1265,12 @@ spawn(function()
                 clearHighlight()
             end
         end
-        -- UPDATED: Multi Kill (cycle luân phiên, no remove dead - skip)
+        -- FIXED: Multi Kill (SEQUENTIAL: attack [1] until dead/invalid, remove [1], proceed to new [1] until <2)
         if multiOn and not safePlatform and #selectedTargets >= 2 then
-            local nextTarget = getNextTarget()
-            if nextTarget then
-                currentTarget = nextTarget
+            local idx = 1
+            local target = selectedTargets[idx]
+            if target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
+                currentTarget = target
                 local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
                 if targetRoot and hrp then
                     if tick() - lastAttack > attackRate then
@@ -1338,18 +1287,27 @@ spawn(function()
                     faceTargetStep()
                     lastFace = tick()
                 end
-                -- Cycle to next after time (luân phiên)
-                if tick() - lastSwitchTime > switchRate then
-                    currentMultiIndex = (currentMultiIndex % #selectedTargets) + 1
-                    lastSwitchTime = tick()
-                end
                 makeHighlight(currentTarget)
             else
-                clearHighlight()
-                currentTarget = nil
-                if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
-                    notify("No alive targets currently. Awaiting respawns in multi mode...", 2)
-                    lastNoTargetNotify = tick()
+                -- FIXED: Invalid/dead - remove [1], proceed (đánh chết mới đến thứ 2)
+                local targetName = target and target.Name or "Unknown"
+                table.remove(selectedTargets, idx)
+                Config.SelectedTargets = selectedTargets
+                SaveConfig()
+                notify("Target '" .. targetName .. "' chết/invalid. Tiếp theo (" .. #selectedTargets .. " left) 🔄", 1.5)
+                if #selectedTargets < 2 then
+                    multiOn = false
+                    UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
+                    Config.MultiOn = false
+                    SaveConfig()
+                    notify("Multi Kill hoàn tất! Còn dưới 2 targets. Cực mạnh xịn! 💀", 3)
+                    clearHighlight()
+                    currentTarget = nil
+                else
+                    -- Proceed to new [1]
+                    currentTarget = selectedTargets[1]
+                    makeHighlight(currentTarget)
+                    notify("Đang đánh target thứ " .. idx + 1 .. "!", 1)
                 end
             end
         end
@@ -1418,7 +1376,7 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
         notify("Select exactly 1 target for Single mode.", 2)
     end
 end)
--- NEW: Multi Kill Selected Button - ENHANCED: Must enable, cycles luân phiên, auto-switch on 1 left
+-- NEW: Multi Kill Selected Button - FIXED: Must enable, starts sequential on [1] (đánh 1 chết mới 2nd)
 UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1438,14 +1396,10 @@ UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
             Config.AutoSelectedOn = false
             SaveConfig()
         
-            currentMultiIndex = 1
-            lastSwitchTime = tick()
-            local nextT = getNextTarget()
-            if nextT then
-                currentTarget = nextT
-                notify("Multi Kill enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Luân phiên: "..#selectedTargets.." targets (every 3s, auto Single on 1 left)", 2.5)
-                makeHighlight(currentTarget)
-            end
+            -- FIXED: Start sequential on [1]
+            currentTarget = selectedTargets[1]
+            notify("Multi Kill enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Sequential: đánh 1 chết mới đến 2nd ("..#selectedTargets.." targets)", 2.5)
+            makeHighlight(currentTarget)
         else
             notify("Multi Kill disabled", 1.5)
             clearHighlight()
@@ -1604,7 +1558,7 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
         notify("Auto Refresh disabled", 1.5)
     end
 end)
--- Enhanced PlayerRemoving - FIXED: Adjust cycle, check auto-switch
+-- Enhanced PlayerRemoving - FIXED: After remove, if multiOn proceed to new [1] (sequential)
 Players.PlayerRemoving:Connect(function(p)
     if currentTarget == p then
         currentTarget = nil
@@ -1621,42 +1575,16 @@ Players.PlayerRemoving:Connect(function(p)
         end
     end
     if found then
-        -- Adjust index if multiOn
-        if multiOn then
-            if removedIndex < currentMultiIndex then
-                currentMultiIndex = currentMultiIndex - 1
-            elseif removedIndex == currentMultiIndex then
-                currentMultiIndex = currentMultiIndex % #selectedTargets + 1
-            end
-            if currentMultiIndex > #selectedTargets then
-                currentMultiIndex = 1
-            end
-        end
-        notify("Target " .. p.Name .. " left. Removed from list (" .. #selectedTargets .. " left)", 2)
         Config.SelectedTargets = selectedTargets
         SaveConfig()
+        notify("Target " .. p.Name .. " left. Removed from list (" .. #selectedTargets .. " left)", 2)
         updateSelectedBtnsText()
-        -- Auto-disable invalid modes
-        if autoSelectedOn and #selectedTargets ~= 1 then
-            autoSelectedOn = false
-            UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
-            Config.AutoSelectedOn = false
-            SaveConfig()
-            notify("Single mode disabled - Select exactly 1 target.", 2)
-        end
-        if multiOn and #selectedTargets < 2 then
-            if #selectedTargets == 1 then
-                -- ENHANCED: Auto-switch to Single
-                multiOn = false
-                autoSelectedOn = true
-                UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
-                UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): ON"
-                Config.MultiOn = false
-                Config.AutoSelectedOn = true
-                SaveConfig()
+        -- FIXED: If multiOn, proceed to new [1]
+        if multiOn then
+            if #selectedTargets >= 2 then
                 currentTarget = selectedTargets[1]
-                notify("Multi -> Single auto-switch after leave! Only 1 left. Cực xịn! 🔄➡️🎯", 2.5)
                 makeHighlight(currentTarget)
+                notify("Multi: Tiếp theo target sau leave.", 1.5)
             else
                 multiOn = false
                 UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
@@ -1666,6 +1594,14 @@ Players.PlayerRemoving:Connect(function(p)
                 clearHighlight()
                 currentTarget = nil
             end
+        end
+        -- Auto-disable invalid modes
+        if autoSelectedOn and #selectedTargets ~= 1 then
+            autoSelectedOn = false
+            UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
+            Config.AutoSelectedOn = false
+            SaveConfig()
+            notify("Single mode disabled - Select exactly 1 target.", 2)
         end
     end
     -- Clean up button
@@ -1712,5 +1648,5 @@ end)
 refreshPlayerList()
 updateSelectedBtnsText()
 getgenv().LuexHopServer = hopServer
-print("Luex ULTRA v3.0: Cycling Multi (luân phiên until 1 -> auto Single) + Immediate Attack Fix + Shared List + Neon Revert + Scrollable loaded - Cực xịn cực mạnh xịn sò 😈🔥")
-notify("Luex ULTRA v3.0 Loaded! Multi: Enable -> Luân phiên cycle until 1 left (auto Single) | Ấn target = Đánh ngay if Multi ON (fixed)! Scroll left column!", 4)
+print("Luex ULTRA v3.1: Sequential Multi (đánh 1 chết mới đến 2nd) + Immediate Attack + Shared List + Neon Revert + Scrollable loaded - Cực xịn cực mạnh xịn sò 😈💥")
+notify("Luex ULTRA v3.1 Loaded! Multi: Enable -> Đánh sequential 1 chết mới 2nd until <2 | Ấn target = Đánh ngay if Multi ON! Scroll left!", 4)
