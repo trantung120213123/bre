@@ -507,7 +507,7 @@ local toolList = {
     "Brutual Beatdown", "Strength Difference", "Death Blow", "Quick Slice", "Atmos Cleave", "Pinpoint Cut",
     "Split Second Counter", "Sunset", "Solar Cleave", "Sunrise", "Atomic Slash", "Crushing Pull", "Windstorm Fury",
     "Stone Coffin", "Expulsive Push", "Cosmic Strike", "Psychic Ricochet", "Terrible Tornado", "Sky Snatcher",
-    "Bullet Barrage", "Vanishing Kick", "Whirlwind Drop", "Head First", "Grand Fissure", "Twin Fangs",
+    "Bullet Barrage", "Vanishing Kick", "Head First", "Grand Fissure", "Twin Fangs",
     "Earth Splitting Strike", "Last Breath"
 }
 -- IMPROVED: Player button cache for smoother updates (no full recreate)
