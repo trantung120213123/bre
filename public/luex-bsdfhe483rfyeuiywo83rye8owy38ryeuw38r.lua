@@ -1,6 +1,3 @@
--- Luex UI ULTRA v3.1 | Sequential Multi Kill (Attack #1 until dead -> #2 until dead, cycle back to #1 if all dead, no remove on death, only on out/leave) + Immediate Attack on Select + Shared List + Neon Revert + Scrollable
--- ENHANCED: Multi kills SEQUENTIAL (đánh 1 chết mới đến 2nd, cycle quay lại 1 nếu hết, chỉ remove nếu out/leave) until <2 or off | Must enable Multi | Click select = attack IMMEDIATE if Multi ON | Auto-disable invalid | Rest unchanged 😈💥
--- FIXED: No remove on death (chỉ remove out/leave), cycle back to #1 if all dead & wait respawn, sequential skip dead, index management on insert/remove
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -9,25 +6,25 @@ local Stats = game:GetService("Stats")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
--- Premium Key Mechanism
+
 local PREMIUM_KEY = "1"
 local hasPremium = getgenv().LuexKey == PREMIUM_KEY
--- Auto Save Config System
+
 local Config = {
     AutoOn = false,
-    AutoSelectedOn = false, -- Single mode
-    MultiOn = false, -- NEW: Multi mode
+    AutoSelectedOn = false,
+    MultiOn = false,
     PredictOn = false,
     ServerHopOn = false,
     SafeZoneOn = false,
     AutoRefreshOn = false,
     UIPosition = {0.05, 0, 0.12, 0},
-    PositionMode = "Behind", -- Default position mode
-    StealthOn = false, -- Stealth mode for ultra hidden
-    SpeedBoostOn = false, -- Speed boost feature
-    SelectedTargets = {} -- Shared list: 1 for single, >=2 for multi
+    PositionMode = "Behind",
+    StealthOn = false,
+    SpeedBoostOn = false,
+    SelectedTargets = {}
 }
--- Load saved config
+
 local function LoadConfig()
     if getgenv().LuexConfig then
         for key, value in pairs(getgenv().LuexConfig) do
@@ -35,27 +32,27 @@ local function LoadConfig()
         end
     end
 end
--- Save config
+
 local function SaveConfig()
     getgenv().LuexConfig = Config
 end
--- Load config immediately
+
 LoadConfig()
--- cleanup old
+
 pcall(function()
     if game.CoreGui:FindFirstChild("LuexUI") then
         game.CoreGui.LuexUI:Destroy()
     end
 end)
--- create ScreenGui
+
 local screen = Instance.new("ScreenGui")
 screen.Name = "LuexUI"
 screen.ResetOnSpawn = false
 screen.Parent = game.CoreGui
--- main container (COMPACT: 550x380, sleeker)
+
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 550, 0, 380) -- Smaller & cooler
+main.Size = UDim2.new(0, 550, 0, 380)
 main.Position = UDim2.new(unpack(Config.UIPosition))
 main.BackgroundColor3 = Color3.fromRGB(10,10,10)
 main.BackgroundTransparency = 0.15
@@ -63,7 +60,7 @@ main.BorderSizePixel = 0
 main.ClipsDescendants = true
 main.Active = true
 main.Parent = screen
--- enhanced neon border glow (outer, thicker)
+
 local border = Instance.new("Frame", main)
 border.Name = "BorderGlow"
 border.AnchorPoint = Vector2.new(0.5,0.5)
@@ -76,13 +73,13 @@ borderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 borderStroke.Color = Color3.fromRGB(255,30,30)
 borderStroke.Transparency = 0.5
 borderStroke.Thickness = 3
--- top bar (drag handle)
+
 local topBar = Instance.new("Frame", main)
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1,0,0,46)
 topBar.Position = UDim2.new(0,0,0,0)
 topBar.BackgroundTransparency = 1
--- Luex logo (TextLabel with glow + text stroke)
+
 local logo = Instance.new("TextLabel", topBar)
 logo.Name = "Logo"
 logo.Text = "LUEX"
@@ -96,7 +93,7 @@ logo.Position = UDim2.new(0, 12, 0, 6)
 logo.Size = UDim2.new(0, 160, 0, 34)
 logo.TextXAlignment = Enum.TextXAlignment.Left
 logo.ZIndex = 3
--- subtle gradient on text (via UIGradient on a label overlay)
+
 local gradHolder = Instance.new("Frame", logo)
 gradHolder.Size = UDim2.new(1,0,1,0)
 gradHolder.BackgroundTransparency = 1
@@ -108,7 +105,7 @@ uiGrad.Color = ColorSequence.new{
 }
 uiGrad.Rotation = 10
 gradHolder.ZIndex = 2
--- crack effect: a few rotated lines layered on logo (animated)
+
 local crackContainer = Instance.new("Frame", topBar)
 crackContainer.Name = "Crack"
 crackContainer.Size = UDim2.new(0, 140, 0, 34)
@@ -129,7 +126,7 @@ end
 makeCrackLine(0.15, 18, 60, -12)
 makeCrackLine(0.45, 8, 40, 8)
 makeCrackLine(0.65, 22, 50, -6)
--- minimize/restore button (top-right)
+
 local minBtn = Instance.new("TextButton", topBar)
 minBtn.Name = "Minimize"
 minBtn.Size = UDim2.new(0, 36, 0, 28)
@@ -141,13 +138,13 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 22
 minBtn.TextColor3 = Color3.fromRGB(240,240,240)
 minBtn.ZIndex = 4
--- content area (divided into two columns)
+
 local content = Instance.new("Frame", main)
 content.Name = "Content"
 content.Position = UDim2.new(0, 12, 0, 56)
 content.Size = UDim2.new(1, -24, 1, -68)
 content.BackgroundTransparency = 1
--- Left column for controls (NOW SCROLLABLE)
+
 local leftColumn = Instance.new("ScrollingFrame", content)
 leftColumn.Name = "LeftColumn"
 leftColumn.Size = UDim2.new(0.48, 0, 1, 0)
@@ -159,13 +156,13 @@ leftColumn.ScrollBarThickness = 6
 leftColumn.AutomaticCanvasSize = Enum.AutomaticSize.Y
 leftColumn.CanvasSize = UDim2.new(0, 0, 0, 0)
 leftColumn.ScrollingDirection = Enum.ScrollingDirection.Y
--- Right column for player selection
+
 local rightColumn = Instance.new("Frame", content)
 rightColumn.Name = "RightColumn"
 rightColumn.Size = UDim2.new(0.48, 0, 1, 0)
 rightColumn.Position = UDim2.new(0.52, 0, 0, 0)
 rightColumn.BackgroundTransparency = 1
--- Auto Kill Random
+
 local btnAuto = Instance.new("TextButton", leftColumn)
 btnAuto.Size = UDim2.new(1, 0, 0, 36)
 btnAuto.Position = UDim2.new(0, 0, 0, 0)
@@ -180,7 +177,7 @@ local strokeAuto = Instance.new("UIStroke", btnAuto)
 strokeAuto.Color = Color3.fromRGB(200,20,20)
 strokeAuto.Transparency = 0.85
 strokeAuto.Thickness = 1.5
--- Auto Kill Selected (SINGLE: max 1)
+
 local btnAutoSelected = Instance.new("TextButton", leftColumn)
 btnAutoSelected.Size = UDim2.new(1, 0, 0, 36)
 btnAutoSelected.Position = UDim2.new(0, 0, 0, 40)
@@ -195,7 +192,7 @@ local strokeSelected = Instance.new("UIStroke", btnAutoSelected)
 strokeSelected.Color = Color3.fromRGB(200,20,20)
 strokeSelected.Transparency = 0.85
 strokeSelected.Thickness = 1.5
--- NEW: Multi Kill Selected (>=2, right under single)
+
 local btnMultiSelected = Instance.new("TextButton", leftColumn)
 btnMultiSelected.Size = UDim2.new(1, 0, 0, 36)
 btnMultiSelected.Position = UDim2.new(0, 0, 0, 80)
@@ -210,7 +207,7 @@ local strokeMulti = Instance.new("UIStroke", btnMultiSelected)
 strokeMulti.Color = Color3.fromRGB(200,20,20)
 strokeMulti.Transparency = 0.85
 strokeMulti.Thickness = 1.5
--- Change Player button (shifted down)
+
 local btnChangePlayer = Instance.new("TextButton", leftColumn)
 btnChangePlayer.Size = UDim2.new(1, 0, 0, 36)
 btnChangePlayer.Position = UDim2.new(0, 0, 0, 120)
@@ -225,7 +222,7 @@ local stroke2 = Instance.new("UIStroke", btnChangePlayer)
 stroke2.Color = Color3.fromRGB(200,20,20)
 stroke2.Transparency = 0.85
 stroke2.Thickness = 1.5
--- Position Mode button (shifted)
+
 local btnPositionMode = Instance.new("TextButton", leftColumn)
 btnPositionMode.Size = UDim2.new(1, 0, 0, 36)
 btnPositionMode.Position = UDim2.new(0, 0, 0, 160)
@@ -240,7 +237,7 @@ local strokePosMode = Instance.new("UIStroke", btnPositionMode)
 strokePosMode.Color = Color3.fromRGB(200,20,20)
 strokePosMode.Transparency = 0.85
 strokePosMode.Thickness = 1.5
--- Stealth Mode button (shifted)
+
 local btnStealth = Instance.new("TextButton", leftColumn)
 btnStealth.Size = UDim2.new(1, 0, 0, 36)
 btnStealth.Position = UDim2.new(0, 0, 0, 200)
@@ -255,7 +252,7 @@ local strokeStealth = Instance.new("UIStroke", btnStealth)
 strokeStealth.Color = Color3.fromRGB(200,20,20)
 strokeStealth.Transparency = 0.85
 strokeStealth.Thickness = 1.5
--- Speed Boost button (shifted)
+
 local btnSpeedBoost = Instance.new("TextButton", leftColumn)
 btnSpeedBoost.Size = UDim2.new(1, 0, 0, 36)
 btnSpeedBoost.Position = UDim2.new(0, 0, 0, 240)
@@ -270,7 +267,7 @@ local strokeSpeed = Instance.new("UIStroke", btnSpeedBoost)
 strokeSpeed.Color = Color3.fromRGB(200,20,20)
 strokeSpeed.Transparency = 0.85
 strokeSpeed.Thickness = 1.5
--- Predict Direction button (shifted)
+
 local btnPredict = Instance.new("TextButton", leftColumn)
 btnPredict.Size = UDim2.new(1, 0, 0, 36)
 btnPredict.Position = UDim2.new(0, 0, 0, 280)
@@ -285,7 +282,7 @@ local stroke3 = Instance.new("UIStroke", btnPredict)
 stroke3.Color = Color3.fromRGB(200,20,20)
 stroke3.Transparency = 0.85
 stroke3.Thickness = 1.5
--- Auto Server Hop button (shifted)
+
 local btnServerHop = Instance.new("TextButton", leftColumn)
 btnServerHop.Size = UDim2.new(1, 0, 0, 36)
 btnServerHop.Position = UDim2.new(0, 0, 0, 320)
@@ -300,7 +297,7 @@ local stroke5 = Instance.new("UIStroke", btnServerHop)
 stroke5.Color = Color3.fromRGB(200,20,20)
 stroke5.Transparency = 0.85
 stroke5.Thickness = 1.5
--- Auto Safe Zone button (shifted)
+
 local btnSafeZone = Instance.new("TextButton", leftColumn)
 btnSafeZone.Size = UDim2.new(1, 0, 0, 36)
 btnSafeZone.Position = UDim2.new(0, 0, 0, 360)
@@ -315,7 +312,7 @@ local stroke6 = Instance.new("UIStroke", btnSafeZone)
 stroke6.Color = Color3.fromRGB(200,20,20)
 stroke6.Transparency = 0.85
 stroke6.Thickness = 1.5
--- small hint text (updated) - now below scrolling frame
+
 local hint = Instance.new("TextLabel", content)
 hint.Size = UDim2.new(0.48,0,0,24)
 hint.Position = UDim2.new(0,0,1,-24)
@@ -325,7 +322,7 @@ hint.TextSize = 11
 hint.Font = Enum.Font.Gotham
 hint.Text = "Luex ULTRA v3.1 | Sequential Multi (đánh 1 chết mới đến 2nd, cycle quay lại 1 nếu hết, chỉ remove out) + Immediate Attack + Shared List + Neon Revert + Scrollable"
 hint.TextWrapped = true
--- Player Selection Title
+
 local playerTitle = Instance.new("TextLabel", rightColumn)
 playerTitle.Size = UDim2.new(1, 0, 0, 28)
 playerTitle.Position = UDim2.new(0, 0, 0, 0)
@@ -335,7 +332,7 @@ playerTitle.TextSize = 14
 playerTitle.Font = Enum.Font.GothamBold
 playerTitle.Text = "PLAYER SELECTION (Click to Toggle - Shared for Single/Multi)"
 playerTitle.TextXAlignment = Enum.TextXAlignment.Left
--- Player List Container
+
 local playerListContainer = Instance.new("ScrollingFrame", rightColumn)
 playerListContainer.Name = "PlayerList"
 playerListContainer.Size = UDim2.new(1, 0, 0, 220)
@@ -347,7 +344,7 @@ playerListContainer.ScrollBarThickness = 6
 playerListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playerListContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 playerListContainer.ScrollingDirection = Enum.ScrollingDirection.Y
--- Refresh Button
+
 local refreshBtn = Instance.new("TextButton", rightColumn)
 refreshBtn.Size = UDim2.new(1, 0, 0, 32)
 refreshBtn.Position = UDim2.new(0, 0, 1, -64)
@@ -362,7 +359,7 @@ local stroke7 = Instance.new("UIStroke", refreshBtn)
 stroke7.Color = Color3.fromRGB(200,20,20)
 stroke7.Transparency = 0.85
 stroke7.Thickness = 1.5
--- Auto Refresh Toggle
+
 local autoRefreshToggle = Instance.new("TextButton", rightColumn)
 autoRefreshToggle.Size = UDim2.new(1, 0, 0, 32)
 autoRefreshToggle.Position = UDim2.new(0, 0, 1, -32)
@@ -377,7 +374,7 @@ local stroke8 = Instance.new("UIStroke", autoRefreshToggle)
 stroke8.Color = Color3.fromRGB(200,20,20)
 stroke8.Transparency = 0.85
 stroke8.Thickness = 1.5
--- logo animation: pulsing glow
+
 local glowFrame = Instance.new("Frame", logo)
 glowFrame.Size = UDim2.new(1.6, 0, 1.6, 0)
 glowFrame.Position = UDim2.new(-0.3, 0, -0.3, 0)
@@ -388,7 +385,7 @@ local glowStroke = Instance.new("UIStroke", glowFrame)
 glowStroke.Color = Color3.fromRGB(255, 80, 20)
 glowStroke.Transparency = 0.9
 glowStroke.Thickness = 6
--- store global refs (updated)
+
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
@@ -396,7 +393,7 @@ getgenv().LuexUI = {
     MinBtn = minBtn,
     AutoBtn = btnAuto,
     AutoSelectedBtn = btnAutoSelected,
-    MultiSelectedBtn = btnMultiSelected, -- NEW
+    MultiSelectedBtn = btnMultiSelected,
     ChangePlayerBtn = btnChangePlayer,
     PositionModeBtn = btnPositionMode,
     StealthBtn = btnStealth,
@@ -410,7 +407,7 @@ getgenv().LuexUI = {
     Glow = glowFrame,
     Crack = crackContainer
 }
--- Enhanced drag support
+
 local dragging = false
 local dragStart, startPos
 local function updateDrag(input)
@@ -444,7 +441,7 @@ topBar.InputChanged:Connect(function(input)
         updateDrag(input)
     end
 end)
--- minimize behavior (tween) - keeps current position
+
 local minimized = false
 minBtn.MouseButton1Click:Connect(function()
     if minimized then
@@ -459,11 +456,11 @@ minBtn.MouseButton1Click:Connect(function()
     end
     minimized = not minimized
 end)
--- Luex Logic | Pure Combat System
+
 local UI = getgenv().LuexUI
 local autoOn = Config.AutoOn
-local autoSelectedOn = Config.AutoSelectedOn -- Single
-local multiOn = Config.MultiOn -- NEW: Multi
+local autoSelectedOn = Config.AutoSelectedOn
+local multiOn = Config.MultiOn
 local predictOn = Config.PredictOn
 local serverHopOn = Config.ServerHopOn
 local safeZoneOn = Config.SafeZoneOn
@@ -486,17 +483,17 @@ local noTargetNotifyCooldown = 5
 local lastServerHopCheck = 0
 local serverHopCooldown = 10
 local circleAngle = 0
--- Multi-select vars (FIXED: added index & no remove on death, cycle back)
+
 local selectedTargets = Config.SelectedTargets
 local currentMultiIndex = 1
 local lastTargetCheck = 0
 local targetCheckRate = 0.1
 local lastSwitchNotify = 0
 local switchNotifyCooldown = 2
--- Safe Zone variables
+
 local safePlatform = nil
 local wasAutoKillOn = false
--- Tool list
+
 local toolList = {
     "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Table Flip",
     "Omni-Directional Punch", "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
@@ -510,9 +507,9 @@ local toolList = {
     "Bullet Barrage", "Vanishing Kick", "Head First", "Grand Fissure", "Twin Fangs",
     "Earth Splitting Strike", "Last Breath"
 }
--- IMPROVED: Player button cache for smoother updates (no full recreate)
-local playerButtons = {} -- {player = button}
--- Improved notification system (unchanged)
+
+local playerButtons = {}
+
 local activeNotifications = {}
 local maxNotifications = 3
 local notificationQueue = {}
@@ -612,7 +609,7 @@ local function notify(text, sec)
         frame:Destroy()
     end)
 end
--- Toggle select (shared list, smooth color tween) - FIXED: Insert at FRONT for sequential priority (new = next after current), manage index if multi
+
 local function isSelected(player)
     for _, p in ipairs(selectedTargets) do
         if p == player then return true end
@@ -626,7 +623,7 @@ local function updateButtonColors(button, isSel, playerName)
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBg}):Play()
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = targetTextColor}):Play()
     button.Text = targetText
-    -- Handle neon stroke
+
     local existingStroke = button:FindFirstChild("NeonStroke")
     if isSel then
         if not existingStroke then
@@ -681,21 +678,21 @@ local function toggleSelect(player)
     if foundIndex then
         table.remove(selectedTargets, foundIndex)
         notify("Deselected: " .. player.Name .. " (" .. #selectedTargets .. " left)", 1.5)
-        -- FIXED: Manage index if multiOn
+
         if multiOn and foundIndex then
             if foundIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
             elseif foundIndex == currentMultiIndex then
                 currentMultiIndex = math.fmod(currentMultiIndex - 1, #selectedTargets) + 1
-                lastTargetCheck = 0  -- Force check
+                lastTargetCheck = 0
             end
             if currentMultiIndex > #selectedTargets then currentMultiIndex = 1 end
         end
     else
-        -- FIXED: Insert at FRONT for priority (new target = next kill after current)
+
         table.insert(selectedTargets, 1, player)
         notify("Selected: " .. player.Name .. " (" .. #selectedTargets .. " total)", 1.5)
-        -- FIXED: Immediate attack if Multi ON, reset index to 1
+
         if multiOn then
             currentMultiIndex = 1
             immediateAttack(player)
@@ -705,13 +702,13 @@ local function toggleSelect(player)
     end
     Config.SelectedTargets = selectedTargets
     SaveConfig()
-    -- Update button smoothly
+
     local button = playerButtons[player]
     if button then
         local isSel = isSelected(player)
         updateButtonColors(button, isSel, player.Name)
     end
-    -- NEW: Auto-disable invalid modes after toggle
+
     if autoSelectedOn and #selectedTargets ~= 1 then
         autoSelectedOn = false
         UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
@@ -732,7 +729,7 @@ local function updateSelectedBtnsText()
     UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): " .. (autoSelectedOn and "ON" or "OFF")
     UI.MultiSelectedBtn.Text = "Multi Kill Selected: " .. (multiOn and "ON (" .. #selectedTargets .. ")" or "OFF")
 end
--- highlight target (updated for modes) - FIXED: Pass multiIndex for [MULTI X/N]
+
 local function makeHighlight(player, multiIndex)
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
@@ -774,7 +771,7 @@ local function clearHighlight()
         highlightGui = nil
     end)
 end
--- choose random player (unchanged)
+
 local function chooseRandom()
     local pls = {}
     for _,p in pairs(Players:GetPlayers()) do
@@ -788,12 +785,12 @@ local function chooseRandom()
     if #pls == 0 then return nil end
     return pls[math.random(1,#pls)]
 end
--- Get ping function (unchanged)
+
 local function getPing()
     local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
     return math.clamp(ping, 0.05, 0.5)
 end
--- Enhanced prediction (unchanged)
+
 local function predictTargetPosition(targetRoot)
     if not predictOn or not targetRoot then return targetRoot.Position end
     local ping = getPing()
@@ -803,7 +800,7 @@ local function predictTargetPosition(targetRoot)
     end
     return targetRoot.Position
 end
--- Position mode functions (unchanged)
+
 local function teleportToPosition(targetRoot, hrp)
     local targetPos = predictTargetPosition(targetRoot)
     local radius = 5
@@ -822,7 +819,7 @@ local function teleportToPosition(targetRoot, hrp)
         hrp.CFrame = CFrame.lookAt(newPos, targetPos)
     end
 end
--- Stealth function (unchanged)
+
 local function toggleStealth()
     local char = LocalPlayer.Character
     if not char then return end
@@ -854,7 +851,7 @@ local function toggleStealth()
         notify("Stealth OFF", 1.5)
     end
 end
--- Speed Boost function (unchanged)
+
 local function speedBoostStep()
     local char = LocalPlayer.Character
     if not char or not speedBoostOn then return end
@@ -863,7 +860,7 @@ local function speedBoostStep()
         humanoid.WalkSpeed = 50
     end
 end
--- face target (unchanged)
+
 local function faceTargetStep()
     if not currentTarget or not currentTarget.Character then return end
     local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
@@ -872,7 +869,7 @@ local function faceTargetStep()
     if not targetRoot or not hrp then return end
     hrp.CFrame = CFrame.lookAt(hrp.Position, predictTargetPosition(targetRoot))
 end
--- spam attack (unchanged)
+
 local function spamAttack()
     if not currentTarget or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
@@ -908,7 +905,7 @@ local function spamAttack()
         end
     end
 end
--- Auto Safe Zone Functions (unchanged)
+
 local function createSafePlatform()
     if not hasPremium then return end
     if safePlatform then return end
@@ -964,7 +961,7 @@ local function removeSafePlatform()
         end
     end
 end
--- Server Hop Functions (unchanged)
+
 local PlaceId = game.PlaceId
 local function getServers(minPlayers, maxPlayers)
     local servers = {}
@@ -973,18 +970,18 @@ local function getServers(minPlayers, maxPlayers)
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100",
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100"
         }
-   
+
         for _, url in ipairs(urls) do
             local response = game:HttpGet(url)
             local data = HttpService:JSONDecode(response)
-       
+
             for _, server in ipairs(data.data) do
                 if server.playing >= minPlayers and server.playing <= maxPlayers and server.id ~= game.JobId then
                     table.insert(servers, server)
                 end
             end
         end
-   
+
         return servers
     end)
     if success then
@@ -1002,14 +999,14 @@ local function hopServer()
         table.sort(servers, function(a, b)
             return math.abs(a.playing - 12) < math.abs(b.playing - 12)
         end)
-   
+
         local bestServer = servers[1]
         notify("Hopping to server with "..bestServer.playing.." players...", 3)
-   
+
         local success, err = pcall(function()
             TeleportService:TeleportToPlaceInstance(PlaceId, bestServer.id, LocalPlayer)
         end)
-   
+
         if not success then
             notify("Server hop failed, trying alternative...", 2)
             if #servers > 1 then
@@ -1029,9 +1026,9 @@ local function hopServer()
         end
     end
 end
--- FIXED: Player Selection Functions (update existing buttons for smooth colors/status)
+
 local function createPlayerButton(player, yPosition)
-    -- Clean up if exists
+
     if playerButtons[player] then
         playerButtons[player]:Destroy()
     end
@@ -1048,7 +1045,7 @@ local function createPlayerButton(player, yPosition)
     button.TextColor3 = isSel and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(240,240,240)
     button.AutoButtonColor = false
     button.Parent = UI.PlayerList
-    -- Neon stroke for selected (pulsing)
+
     if isSel then
         local neonStroke = Instance.new("UIStroke", button)
         neonStroke.Name = "NeonStroke"
@@ -1062,7 +1059,7 @@ local function createPlayerButton(player, yPosition)
             end
         end)
     end
-    -- Status indicator
+
     local statusIndicator = Instance.new("Frame", button)
     statusIndicator.Name = "StatusIndicator"
     statusIndicator.Size = UDim2.new(0, 8, 0, 8)
@@ -1081,7 +1078,7 @@ local function createPlayerButton(player, yPosition)
         end
     end
     updateStatus()
-    -- Hover effect
+
     button.MouseEnter:Connect(function()
         local currentSel = isSelected(player)
         if not currentSel then
@@ -1094,11 +1091,11 @@ local function createPlayerButton(player, yPosition)
             TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 8, 8)}):Play()
         end
     end)
-    -- Toggle select on click
+
     button.MouseButton1Click:Connect(function()
         toggleSelect(player)
     end)
-    -- Cache button
+
     playerButtons[player] = button
     return button
 end
@@ -1112,9 +1109,9 @@ local function refreshPlayerList()
                 createPlayerButton(player, yPosition)
                 yPosition = yPosition + 40
             else
-                -- Update position if needed (for new joins or order changes)
+
                 playerButtons[player].Position = UDim2.new(0, 5, 0, yPosition)
-                -- Update status smoothly
+
                 local status = playerButtons[player]:FindFirstChild("StatusIndicator")
                 if status then
                     spawn(function()
@@ -1130,14 +1127,14 @@ local function refreshPlayerList()
                         updateStatusForButton()
                     end)
                 end
-                -- Ensure color is correct and smooth
+
                 local isSel = isSelected(player)
                 updateButtonColors(playerButtons[player], isSel, player.Name)
                 yPosition = yPosition + 40
             end
         end
     end
-    -- Remove buttons for left players
+
     for player, button in pairs(playerButtons) do
         if not visiblePlayers[player] then
             button:Destroy()
@@ -1146,7 +1143,7 @@ local function refreshPlayerList()
     end
     UI.PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
 end
--- Auto Refresh Player List
+
 spawn(function()
     while true do
         if autoRefreshOn then
@@ -1155,7 +1152,7 @@ spawn(function()
         wait(5)
     end
 end)
--- Character respawn handler (unchanged)
+
 local function onCharacterAdded(char)
     wait(1)
     if stealthOn then
@@ -1180,7 +1177,7 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 if LocalPlayer.Character then
     onCharacterAdded(LocalPlayer.Character)
 end
--- Optimized auto-kill loop (FIXED: Multi sequential cycle - attack current until dead, skip to next alive, cycle back to 1 if all dead, no remove on death, only check every 0.1s to avoid spam)
+
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
@@ -1221,7 +1218,7 @@ spawn(function()
             continue
         end
         local hrp = char:FindFirstChild("HumanoidRootPart")
-        -- Check for multi disable if <2
+
         if multiOn and #selectedTargets < 2 then
             multiOn = false
             UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
@@ -1232,7 +1229,7 @@ spawn(function()
             currentTarget = nil
             currentMultiIndex = 1
         end
-        -- Auto Kill Random
+
         if autoOn and not safePlatform then
             if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 then
                 currentTarget = chooseRandom()
@@ -1264,7 +1261,7 @@ spawn(function()
                 end
             end
         end
-        -- UPDATED: Auto Kill Single (uses selectedTargets[1])
+
         if autoSelectedOn and not safePlatform and #selectedTargets == 1 then
             currentTarget = selectedTargets[1]
             if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
@@ -1291,9 +1288,9 @@ spawn(function()
                 clearHighlight()
             end
         end
-        -- FIXED: Multi Kill (SEQUENTIAL: attack current until dead/invalid, skip to next alive (no remove), cycle back to 1 if all dead, check every 0.1s)
+
         if multiOn and not safePlatform and #selectedTargets >= 2 then
-            -- Target management (slow check)
+
             if tick() - lastTargetCheck > targetCheckRate then
                 local target = selectedTargets[currentMultiIndex]
                 local isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0
@@ -1311,7 +1308,7 @@ spawn(function()
                     lastTargetCheck = tick()
                     local switched = false
                     if attempts >= #selectedTargets then
-                        -- All dead, cycle back to 1, wait respawn
+
                         currentMultiIndex = 1
                         currentTarget = nil
                         clearHighlight()
@@ -1320,7 +1317,7 @@ spawn(function()
                             lastSwitchNotify = tick()
                         end
                     else
-                        -- Switched to valid
+
                         currentTarget = target
                         makeHighlight(currentTarget, currentMultiIndex)
                         switched = true
@@ -1330,13 +1327,13 @@ spawn(function()
                         end
                     end
                 else
-                    -- Still valid
+
                     currentTarget = target
                     makeHighlight(currentTarget, currentMultiIndex)
                     lastTargetCheck = tick()
                 end
             end
-            -- Attack if valid target
+
             if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character.Humanoid.Health > 0 then
                 local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
                 if targetRoot and hrp then
@@ -1355,13 +1352,13 @@ spawn(function()
                     lastFace = tick()
                 end
             else
-                -- Quick invalid check, force next management
+
                 lastTargetCheck = 0
             end
         end
     end
 end)
--- Button connections (updated for single/multi)
+
 UI.AutoBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1379,7 +1376,7 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
         Config.AutoSelectedOn = false
         Config.MultiOn = false
         SaveConfig()
-   
+
         notify("Auto Kill Random enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
@@ -1411,7 +1408,7 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
             Config.AutoOn = false
             Config.MultiOn = false
             SaveConfig()
-       
+
             currentTarget = selectedTargets[1]
             notify("Auto Kill Single enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
@@ -1424,7 +1421,7 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
         notify("Select exactly 1 target for Single mode.", 2)
     end
 end)
--- NEW: Multi Kill Selected Button - FIXED: Must enable, starts sequential on [1] (đánh 1 chết mới 2nd, cycle back)
+
 UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1443,8 +1440,7 @@ UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
             Config.AutoOn = false
             Config.AutoSelectedOn = false
             SaveConfig()
-       
-            -- FIXED: Start sequential on [1], reset index
+
             currentMultiIndex = 1
             lastTargetCheck = 0
             currentTarget = selectedTargets[1]
@@ -1490,7 +1486,7 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
         notify("No other valid targets found", 2)
     end
 end)
--- Updated Position Mode Cycle
+
 UI.PositionModeBtn.MouseButton1Click:Connect(function()
     if positionMode == "Behind" then
         positionMode = "Under"
@@ -1512,7 +1508,7 @@ UI.PositionModeBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
--- Stealth Button
+
 UI.StealthBtn.MouseButton1Click:Connect(function()
     stealthOn = not stealthOn
     UI.StealthBtn.Text = "Stealth Mode: "..(stealthOn and "ON" or "OFF")
@@ -1520,7 +1516,7 @@ UI.StealthBtn.MouseButton1Click:Connect(function()
     SaveConfig()
     toggleStealth()
 end)
--- Speed Boost Button
+
 UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
     speedBoostOn = not speedBoostOn
     UI.SpeedBoostBtn.Text = "Speed Boost: "..(speedBoostOn and "ON" or "OFF")
@@ -1539,7 +1535,7 @@ UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
         notify("Speed Boost disabled", 1.5)
     end
 end)
--- Predict Button (unchanged)
+
 UI.PredictBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Predict Direction requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1555,7 +1551,7 @@ UI.PredictBtn.MouseButton1Click:Connect(function()
         notify("Direction Prediction disabled", 1.5)
     end
 end)
--- Server Hop Button (unchanged)
+
 UI.ServerHopBtn.MouseButton1Click:Connect(function()
     serverHopOn = not serverHopOn
     UI.ServerHopBtn.Text = "Auto Server Hop: "..(serverHopOn and "ON" or "OFF")
@@ -1567,7 +1563,7 @@ UI.ServerHopBtn.MouseButton1Click:Connect(function()
         notify("Auto Server Hop disabled", 1.5)
     end
 end)
--- Safe Zone Button (unchanged)
+
 UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Auto Safe Zone requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1609,7 +1605,7 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
         notify("Auto Refresh disabled", 1.5)
     end
 end)
--- Enhanced PlayerRemoving - FIXED: After remove, manage index, force check if multi
+
 Players.PlayerRemoving:Connect(function(p)
     if currentTarget == p then
         currentTarget = nil
@@ -1630,7 +1626,7 @@ Players.PlayerRemoving:Connect(function(p)
         SaveConfig()
         notify("Target " .. p.Name .. " out/left. Removed from list (" .. #selectedTargets .. " left)", 2)
         updateSelectedBtnsText()
-        -- FIXED: If multiOn, adjust index & force check
+
         if multiOn then
             if removedIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
@@ -1638,7 +1634,7 @@ Players.PlayerRemoving:Connect(function(p)
                 currentMultiIndex = math.fmod(currentMultiIndex - 1, #selectedTargets) + 1
             end
             if currentMultiIndex > #selectedTargets then currentMultiIndex = 1 end
-            lastTargetCheck = 0  -- Force next check
+            lastTargetCheck = 0
             if #selectedTargets >= 2 then
                 local tempTarget = selectedTargets[currentMultiIndex]
                 local isTempValid = tempTarget and tempTarget.Character and tempTarget.Character:FindFirstChild("Humanoid") and tempTarget.Character.Humanoid.Health > 0
@@ -1658,7 +1654,7 @@ Players.PlayerRemoving:Connect(function(p)
                 currentMultiIndex = 1
             end
         end
-        -- Auto-disable invalid modes
+
         if autoSelectedOn and #selectedTargets ~= 1 then
             autoSelectedOn = false
             UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
@@ -1667,7 +1663,7 @@ Players.PlayerRemoving:Connect(function(p)
             notify("Single mode disabled - Select exactly 1 target.", 2)
         end
     end
-    -- Clean up button
+
     if playerButtons[p] then
         playerButtons[p]:Destroy()
         playerButtons[p] = nil
@@ -1688,7 +1684,7 @@ Players.PlayerAdded:Connect(function(p)
     wait(2)
     refreshPlayerList()
 end)
--- Animations (unchanged)
+
 spawn(function()
     while true do
         for i,child in ipairs(UI.Crack:GetChildren()) do
@@ -1707,7 +1703,7 @@ spawn(function()
         wait(1.2)
     end
 end)
--- Initial refresh
+
 refreshPlayerList()
 updateSelectedBtnsText()
 getgenv().LuexHopServer = hopServer
