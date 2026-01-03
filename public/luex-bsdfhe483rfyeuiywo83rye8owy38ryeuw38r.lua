@@ -6,10 +6,9 @@ local Stats = game:GetService("Stats")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
-
 local PREMIUM_KEY = "1"
 local hasPremium = getgenv().LuexKey == PREMIUM_KEY
-
+local PROTECTED_USER = "braniothecraft5"
 local Config = {
     AutoOn = false,
     AutoSelectedOn = false,
@@ -22,34 +21,34 @@ local Config = {
     PositionMode = "Behind",
     StealthOn = false,
     SpeedBoostOn = false,
-    SelectedTargets = {}
+    SelectedTargets = {},
+    BlacklistedPlayers = {PROTECTED_USER}
 }
-
 local function LoadConfig()
     if getgenv().LuexConfig then
         for key, value in pairs(getgenv().LuexConfig) do
             Config[key] = value
         end
+        if not Config.BlacklistedPlayers then
+            Config.BlacklistedPlayers = {PROTECTED_USER}
+        elseif not table.find(Config.BlacklistedPlayers, PROTECTED_USER) then
+            table.insert(Config.BlacklistedPlayers, PROTECTED_USER)
+        end
     end
 end
-
 local function SaveConfig()
     getgenv().LuexConfig = Config
 end
-
 LoadConfig()
-
 pcall(function()
     if game.CoreGui:FindFirstChild("LuexUI") then
         game.CoreGui.LuexUI:Destroy()
     end
 end)
-
 local screen = Instance.new("ScreenGui")
 screen.Name = "LuexUI"
 screen.ResetOnSpawn = false
 screen.Parent = game.CoreGui
-
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = UDim2.new(0, 550, 0, 380)
@@ -60,7 +59,6 @@ main.BorderSizePixel = 0
 main.ClipsDescendants = true
 main.Active = true
 main.Parent = screen
-
 local border = Instance.new("Frame", main)
 border.Name = "BorderGlow"
 border.AnchorPoint = Vector2.new(0.5,0.5)
@@ -73,13 +71,11 @@ borderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 borderStroke.Color = Color3.fromRGB(255,30,30)
 borderStroke.Transparency = 0.5
 borderStroke.Thickness = 3
-
 local topBar = Instance.new("Frame", main)
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1,0,0,46)
 topBar.Position = UDim2.new(0,0,0,0)
 topBar.BackgroundTransparency = 1
-
 local logo = Instance.new("TextLabel", topBar)
 logo.Name = "Logo"
 logo.Text = "LUEX"
@@ -93,7 +89,6 @@ logo.Position = UDim2.new(0, 12, 0, 6)
 logo.Size = UDim2.new(0, 160, 0, 34)
 logo.TextXAlignment = Enum.TextXAlignment.Left
 logo.ZIndex = 3
-
 local gradHolder = Instance.new("Frame", logo)
 gradHolder.Size = UDim2.new(1,0,1,0)
 gradHolder.BackgroundTransparency = 1
@@ -105,7 +100,6 @@ uiGrad.Color = ColorSequence.new{
 }
 uiGrad.Rotation = 10
 gradHolder.ZIndex = 2
-
 local crackContainer = Instance.new("Frame", topBar)
 crackContainer.Name = "Crack"
 crackContainer.Size = UDim2.new(0, 140, 0, 34)
@@ -126,7 +120,6 @@ end
 makeCrackLine(0.15, 18, 60, -12)
 makeCrackLine(0.45, 8, 40, 8)
 makeCrackLine(0.65, 22, 50, -6)
-
 local minBtn = Instance.new("TextButton", topBar)
 minBtn.Name = "Minimize"
 minBtn.Size = UDim2.new(0, 36, 0, 28)
@@ -138,13 +131,11 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 22
 minBtn.TextColor3 = Color3.fromRGB(240,240,240)
 minBtn.ZIndex = 4
-
 local content = Instance.new("Frame", main)
 content.Name = "Content"
 content.Position = UDim2.new(0, 12, 0, 56)
 content.Size = UDim2.new(1, -24, 1, -68)
 content.BackgroundTransparency = 1
-
 local leftColumn = Instance.new("ScrollingFrame", content)
 leftColumn.Name = "LeftColumn"
 leftColumn.Size = UDim2.new(0.48, 0, 1, 0)
@@ -156,13 +147,11 @@ leftColumn.ScrollBarThickness = 6
 leftColumn.AutomaticCanvasSize = Enum.AutomaticSize.Y
 leftColumn.CanvasSize = UDim2.new(0, 0, 0, 0)
 leftColumn.ScrollingDirection = Enum.ScrollingDirection.Y
-
 local rightColumn = Instance.new("Frame", content)
 rightColumn.Name = "RightColumn"
 rightColumn.Size = UDim2.new(0.48, 0, 1, 0)
 rightColumn.Position = UDim2.new(0.52, 0, 0, 0)
 rightColumn.BackgroundTransparency = 1
-
 local btnAuto = Instance.new("TextButton", leftColumn)
 btnAuto.Size = UDim2.new(1, 0, 0, 36)
 btnAuto.Position = UDim2.new(0, 0, 0, 0)
@@ -177,7 +166,6 @@ local strokeAuto = Instance.new("UIStroke", btnAuto)
 strokeAuto.Color = Color3.fromRGB(200,20,20)
 strokeAuto.Transparency = 0.85
 strokeAuto.Thickness = 1.5
-
 local btnAutoSelected = Instance.new("TextButton", leftColumn)
 btnAutoSelected.Size = UDim2.new(1, 0, 0, 36)
 btnAutoSelected.Position = UDim2.new(0, 0, 0, 40)
@@ -192,7 +180,6 @@ local strokeSelected = Instance.new("UIStroke", btnAutoSelected)
 strokeSelected.Color = Color3.fromRGB(200,20,20)
 strokeSelected.Transparency = 0.85
 strokeSelected.Thickness = 1.5
-
 local btnMultiSelected = Instance.new("TextButton", leftColumn)
 btnMultiSelected.Size = UDim2.new(1, 0, 0, 36)
 btnMultiSelected.Position = UDim2.new(0, 0, 0, 80)
@@ -207,7 +194,6 @@ local strokeMulti = Instance.new("UIStroke", btnMultiSelected)
 strokeMulti.Color = Color3.fromRGB(200,20,20)
 strokeMulti.Transparency = 0.85
 strokeMulti.Thickness = 1.5
-
 local btnChangePlayer = Instance.new("TextButton", leftColumn)
 btnChangePlayer.Size = UDim2.new(1, 0, 0, 36)
 btnChangePlayer.Position = UDim2.new(0, 0, 0, 120)
@@ -222,10 +208,23 @@ local stroke2 = Instance.new("UIStroke", btnChangePlayer)
 stroke2.Color = Color3.fromRGB(200,20,20)
 stroke2.Transparency = 0.85
 stroke2.Thickness = 1.5
-
+local btnBlacklist = Instance.new("TextButton", leftColumn)
+btnBlacklist.Size = UDim2.new(1, 0, 0, 36)
+btnBlacklist.Position = UDim2.new(0, 0, 0, 160)
+btnBlacklist.BackgroundColor3 = Color3.fromRGB(80, 5, 5)
+btnBlacklist.BorderSizePixel = 0
+btnBlacklist.Text = "🛡️ Blacklist (" .. #Config.BlacklistedPlayers .. ") ✓"
+btnBlacklist.Font = Enum.Font.GothamBold
+btnBlacklist.TextSize = 14
+btnBlacklist.TextColor3 = Color3.fromRGB(255, 50, 50)
+btnBlacklist.AutoButtonColor = false
+local strokeBlacklist = Instance.new("UIStroke", btnBlacklist)
+strokeBlacklist.Color = Color3.fromRGB(200,20,20)
+strokeBlacklist.Transparency = 0.85
+strokeBlacklist.Thickness = 1.5
 local btnPositionMode = Instance.new("TextButton", leftColumn)
 btnPositionMode.Size = UDim2.new(1, 0, 0, 36)
-btnPositionMode.Position = UDim2.new(0, 0, 0, 160)
+btnPositionMode.Position = UDim2.new(0, 0, 0, 200)
 btnPositionMode.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPositionMode.BorderSizePixel = 0
 btnPositionMode.Text = "Position Mode: "..Config.PositionMode
@@ -237,10 +236,9 @@ local strokePosMode = Instance.new("UIStroke", btnPositionMode)
 strokePosMode.Color = Color3.fromRGB(200,20,20)
 strokePosMode.Transparency = 0.85
 strokePosMode.Thickness = 1.5
-
 local btnStealth = Instance.new("TextButton", leftColumn)
 btnStealth.Size = UDim2.new(1, 0, 0, 36)
-btnStealth.Position = UDim2.new(0, 0, 0, 200)
+btnStealth.Position = UDim2.new(0, 0, 0, 240)
 btnStealth.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnStealth.BorderSizePixel = 0
 btnStealth.Text = "Stealth Mode: "..(Config.StealthOn and "ON" or "OFF")
@@ -252,10 +250,9 @@ local strokeStealth = Instance.new("UIStroke", btnStealth)
 strokeStealth.Color = Color3.fromRGB(200,20,20)
 strokeStealth.Transparency = 0.85
 strokeStealth.Thickness = 1.5
-
 local btnSpeedBoost = Instance.new("TextButton", leftColumn)
 btnSpeedBoost.Size = UDim2.new(1, 0, 0, 36)
-btnSpeedBoost.Position = UDim2.new(0, 0, 0, 240)
+btnSpeedBoost.Position = UDim2.new(0, 0, 0, 280)
 btnSpeedBoost.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSpeedBoost.BorderSizePixel = 0
 btnSpeedBoost.Text = "Speed Boost: "..(Config.SpeedBoostOn and "ON" or "OFF")
@@ -267,10 +264,9 @@ local strokeSpeed = Instance.new("UIStroke", btnSpeedBoost)
 strokeSpeed.Color = Color3.fromRGB(200,20,20)
 strokeSpeed.Transparency = 0.85
 strokeSpeed.Thickness = 1.5
-
 local btnPredict = Instance.new("TextButton", leftColumn)
 btnPredict.Size = UDim2.new(1, 0, 0, 36)
-btnPredict.Position = UDim2.new(0, 0, 0, 280)
+btnPredict.Position = UDim2.new(0, 0, 0, 320)
 btnPredict.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPredict.BorderSizePixel = 0
 btnPredict.Text = hasPremium and "Predict Direction: "..(Config.PredictOn and "ON" or "OFF") or "Predict Direction: PREMIUM"
@@ -282,10 +278,9 @@ local stroke3 = Instance.new("UIStroke", btnPredict)
 stroke3.Color = Color3.fromRGB(200,20,20)
 stroke3.Transparency = 0.85
 stroke3.Thickness = 1.5
-
 local btnServerHop = Instance.new("TextButton", leftColumn)
 btnServerHop.Size = UDim2.new(1, 0, 0, 36)
-btnServerHop.Position = UDim2.new(0, 0, 0, 320)
+btnServerHop.Position = UDim2.new(0, 0, 0, 360)
 btnServerHop.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnServerHop.BorderSizePixel = 0
 btnServerHop.Text = "Auto Server Hop: "..(Config.ServerHopOn and "ON" or "OFF")
@@ -297,10 +292,9 @@ local stroke5 = Instance.new("UIStroke", btnServerHop)
 stroke5.Color = Color3.fromRGB(200,20,20)
 stroke5.Transparency = 0.85
 stroke5.Thickness = 1.5
-
 local btnSafeZone = Instance.new("TextButton", leftColumn)
 btnSafeZone.Size = UDim2.new(1, 0, 0, 36)
-btnSafeZone.Position = UDim2.new(0, 0, 0, 360)
+btnSafeZone.Position = UDim2.new(0, 0, 0, 400)
 btnSafeZone.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSafeZone.BorderSizePixel = 0
 btnSafeZone.Text = hasPremium and "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF") or "Auto Safe Zone: PREMIUM"
@@ -312,7 +306,6 @@ local stroke6 = Instance.new("UIStroke", btnSafeZone)
 stroke6.Color = Color3.fromRGB(200,20,20)
 stroke6.Transparency = 0.85
 stroke6.Thickness = 1.5
-
 local hint = Instance.new("TextLabel", content)
 hint.Size = UDim2.new(0.48,0,0,24)
 hint.Position = UDim2.new(0,0,1,-24)
@@ -320,9 +313,8 @@ hint.BackgroundTransparency = 1
 hint.TextColor3 = Color3.fromRGB(200,200,200)
 hint.TextSize = 11
 hint.Font = Enum.Font.Gotham
-hint.Text = "Luex ULTRA v3.1 | Sequential Multi (đánh 1 chết mới đến 2nd, cycle quay lại 1 nếu hết, chỉ remove out) + Immediate Attack + Shared List + Neon Revert + Scrollable"
+hint.Text = "Luex ULTRA v3.2 | Blacklist Protection + Sequential Multi"
 hint.TextWrapped = true
-
 local playerTitle = Instance.new("TextLabel", rightColumn)
 playerTitle.Size = UDim2.new(1, 0, 0, 28)
 playerTitle.Position = UDim2.new(0, 0, 0, 0)
@@ -330,9 +322,8 @@ playerTitle.BackgroundTransparency = 1
 playerTitle.TextColor3 = Color3.fromRGB(255, 150, 150)
 playerTitle.TextSize = 14
 playerTitle.Font = Enum.Font.GothamBold
-playerTitle.Text = "PLAYER SELECTION (Click to Toggle - Shared for Single/Multi)"
+playerTitle.Text = "PLAYER SELECTION (Click to Toggle)"
 playerTitle.TextXAlignment = Enum.TextXAlignment.Left
-
 local playerListContainer = Instance.new("ScrollingFrame", rightColumn)
 playerListContainer.Name = "PlayerList"
 playerListContainer.Size = UDim2.new(1, 0, 0, 220)
@@ -344,7 +335,6 @@ playerListContainer.ScrollBarThickness = 6
 playerListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playerListContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 playerListContainer.ScrollingDirection = Enum.ScrollingDirection.Y
-
 local refreshBtn = Instance.new("TextButton", rightColumn)
 refreshBtn.Size = UDim2.new(1, 0, 0, 32)
 refreshBtn.Position = UDim2.new(0, 0, 1, -64)
@@ -359,7 +349,6 @@ local stroke7 = Instance.new("UIStroke", refreshBtn)
 stroke7.Color = Color3.fromRGB(200,20,20)
 stroke7.Transparency = 0.85
 stroke7.Thickness = 1.5
-
 local autoRefreshToggle = Instance.new("TextButton", rightColumn)
 autoRefreshToggle.Size = UDim2.new(1, 0, 0, 32)
 autoRefreshToggle.Position = UDim2.new(0, 0, 1, -32)
@@ -374,7 +363,6 @@ local stroke8 = Instance.new("UIStroke", autoRefreshToggle)
 stroke8.Color = Color3.fromRGB(200,20,20)
 stroke8.Transparency = 0.85
 stroke8.Thickness = 1.5
-
 local glowFrame = Instance.new("Frame", logo)
 glowFrame.Size = UDim2.new(1.6, 0, 1.6, 0)
 glowFrame.Position = UDim2.new(-0.3, 0, -0.3, 0)
@@ -385,7 +373,64 @@ local glowStroke = Instance.new("UIStroke", glowFrame)
 glowStroke.Color = Color3.fromRGB(255, 80, 20)
 glowStroke.Transparency = 0.9
 glowStroke.Thickness = 6
-
+-- Blacklist UI
+local blacklistFrame = Instance.new("Frame")
+blacklistFrame.Name = "BlacklistFrame"
+blacklistFrame.Size = UDim2.new(0, 400, 0, 450)
+blacklistFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+blacklistFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+blacklistFrame.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+blacklistFrame.BackgroundTransparency = 0.1
+blacklistFrame.BorderSizePixel = 0
+blacklistFrame.Visible = false
+blacklistFrame.ZIndex = 10
+blacklistFrame.Parent = screen
+local blacklistBorder = Instance.new("UIStroke", blacklistFrame)
+blacklistBorder.Color = Color3.fromRGB(255, 30, 30)
+blacklistBorder.Thickness = 3
+blacklistBorder.Transparency = 0.3
+local blacklistTopBar = Instance.new("Frame", blacklistFrame)
+blacklistTopBar.Size = UDim2.new(1, 0, 0, 40)
+blacklistTopBar.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
+blacklistTopBar.BorderSizePixel = 0
+local blacklistTitle = Instance.new("TextLabel", blacklistTopBar)
+blacklistTitle.Size = UDim2.new(1, -80, 1, 0)
+blacklistTitle.Position = UDim2.new(0, 10, 0, 0)
+blacklistTitle.BackgroundTransparency = 1
+blacklistTitle.Text = "🛡️ BLACKLIST MANAGER"
+blacklistTitle.Font = Enum.Font.GothamBlack
+blacklistTitle.TextSize = 18
+blacklistTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+blacklistTitle.TextXAlignment = Enum.TextXAlignment.Left
+local blacklistCloseBtn = Instance.new("TextButton", blacklistTopBar)
+blacklistCloseBtn.Size = UDim2.new(0, 60, 0, 30)
+blacklistCloseBtn.Position = UDim2.new(1, -70, 0, 5)
+blacklistCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+blacklistCloseBtn.BorderSizePixel = 0
+blacklistCloseBtn.Text = "✕"
+blacklistCloseBtn.Font = Enum.Font.GothamBold
+blacklistCloseBtn.TextSize = 20
+blacklistCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+local blacklistInfo = Instance.new("TextLabel", blacklistFrame)
+blacklistInfo.Size = UDim2.new(1, -20, 0, 50)
+blacklistInfo.Position = UDim2.new(0, 10, 0, 45)
+blacklistInfo.BackgroundTransparency = 1
+blacklistInfo.Text = "Protected: " .. PROTECTED_USER .. " (Cannot be removed)\nClick player to toggle blacklist"
+blacklistInfo.Font = Enum.Font.Gotham
+blacklistInfo.TextSize = 12
+blacklistInfo.TextColor3 = Color3.fromRGB(255, 200, 100)
+blacklistInfo.TextWrapped = true
+blacklistInfo.TextYAlignment = Enum.TextYAlignment.Top
+local blacklistPlayerList = Instance.new("ScrollingFrame", blacklistFrame)
+blacklistPlayerList.Name = "BlacklistPlayerList"
+blacklistPlayerList.Size = UDim2.new(1, -20, 1, -105)
+blacklistPlayerList.Position = UDim2.new(0, 10, 0, 95)
+blacklistPlayerList.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+blacklistPlayerList.BackgroundTransparency = 0.3
+blacklistPlayerList.BorderSizePixel = 0
+blacklistPlayerList.ScrollBarThickness = 6
+blacklistPlayerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+blacklistPlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
@@ -395,6 +440,7 @@ getgenv().LuexUI = {
     AutoSelectedBtn = btnAutoSelected,
     MultiSelectedBtn = btnMultiSelected,
     ChangePlayerBtn = btnChangePlayer,
+    BlacklistBtn = btnBlacklist,
     PositionModeBtn = btnPositionMode,
     StealthBtn = btnStealth,
     SpeedBoostBtn = btnSpeedBoost,
@@ -404,10 +450,11 @@ getgenv().LuexUI = {
     PlayerList = playerListContainer,
     RefreshBtn = refreshBtn,
     AutoRefreshToggle = autoRefreshToggle,
+    BlacklistFrame = blacklistFrame,
+    BlacklistPlayerList = blacklistPlayerList,
     Glow = glowFrame,
     Crack = crackContainer
 }
-
 local dragging = false
 local dragStart, startPos
 local function updateDrag(input)
@@ -441,7 +488,6 @@ topBar.InputChanged:Connect(function(input)
         updateDrag(input)
     end
 end)
-
 local minimized = false
 minBtn.MouseButton1Click:Connect(function()
     if minimized then
@@ -456,7 +502,6 @@ minBtn.MouseButton1Click:Connect(function()
     end
     minimized = not minimized
 end)
-
 local UI = getgenv().LuexUI
 local autoOn = Config.AutoOn
 local autoSelectedOn = Config.AutoSelectedOn
@@ -483,17 +528,15 @@ local noTargetNotifyCooldown = 5
 local lastServerHopCheck = 0
 local serverHopCooldown = 10
 local circleAngle = 0
-
 local selectedTargets = Config.SelectedTargets
+local blacklistedPlayers = Config.BlacklistedPlayers
 local currentMultiIndex = 1
 local lastTargetCheck = 0
 local targetCheckRate = 0.1
 local lastSwitchNotify = 0
 local switchNotifyCooldown = 2
-
 local safePlatform = nil
 local wasAutoKillOn = false
-
 local toolList = {
     "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Table Flip",
     "Omni-Directional Punch", "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
@@ -507,9 +550,59 @@ local toolList = {
     "Bullet Barrage", "Vanishing Kick", "Head First", "Grand Fissure", "Twin Fangs",
     "Earth Splitting Strike", "Last Breath"
 }
-
 local playerButtons = {}
-
+local blacklistButtons = {}
+local selectedBlacklistPlayers = {}
+-- Blacklist Functions
+local function isBlacklisted(player)
+    return table.find(blacklistedPlayers, player.Name) ~= nil
+end
+local function toggleBlacklist(player)
+    if player.Name == PROTECTED_USER then
+        notify("❌ Cannot modify " .. PROTECTED_USER .. " - Protected user!", 2)
+        return
+    end
+   
+    local index = table.find(blacklistedPlayers, player.Name)
+    if index then
+        table.remove(blacklistedPlayers, index)
+        notify("✅ Removed from blacklist: " .. player.Name, 1.5)
+    else
+        table.insert(blacklistedPlayers, player.Name)
+        notify("🛡️ Added to blacklist: " .. player.Name, 1.5)
+       
+        -- Remove from selected targets if blacklisted
+        local selectedIndex = table.find(selectedTargets, player)
+        if selectedIndex then
+            table.remove(selectedTargets, selectedIndex)
+            notify("Removed from selected targets", 1)
+        end
+       
+        -- Clear current target if it's the blacklisted player
+        if currentTarget == player then
+            currentTarget = nil
+            clearHighlight()
+        end
+    end
+   
+    Config.BlacklistedPlayers = blacklistedPlayers
+    SaveConfig()
+    UI.BlacklistBtn.Text = "🛡️ Blacklist (" .. #blacklistedPlayers .. ") ✓"
+end
+local function updateBlacklistButton(button, player)
+    local isBlack = isBlacklisted(player)
+    local isProtected = player.Name == PROTECTED_USER
+    local isSelected = selectedBlacklistPlayers[player] ~= nil
+   
+    local targetBg = isProtected and Color3.fromRGB(100, 20, 20) or (isSelected and Color3.fromRGB(80, 5, 5) or (isBlack and Color3.fromRGB(60, 10, 10) or Color3.fromRGB(30, 8, 8)))
+    local targetTextColor = isProtected and Color3.fromRGB(255, 200, 100) or (isSelected and Color3.fromRGB(255, 50, 50) or (isBlack and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(240, 240, 240)))
+    local icon = isProtected and "🔒 " or (isBlack and "🛡️ " or "")
+    local checkmark = isSelected and " ✓" or ""
+   
+    TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {BackgroundColor3 = targetBg}):Play()
+    TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {TextColor3 = targetTextColor}):Play()
+    button.Text = icon .. player.Name .. checkmark
+end
 local activeNotifications = {}
 local maxNotifications = 3
 local notificationQueue = {}
@@ -609,12 +702,17 @@ local function notify(text, sec)
         frame:Destroy()
     end)
 end
-
 local function isSelected(player)
     for _, p in ipairs(selectedTargets) do
         if p == player then return true end
     end
     return false
+end
+local function clearHighlight()
+    pcall(function()
+        if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
+        highlightGui = nil
+    end)
 end
 local function updateButtonColors(button, isSel, playerName)
     local targetBg = isSel and Color3.fromRGB(80, 5, 5) or Color3.fromRGB(30, 8, 8)
@@ -623,7 +721,6 @@ local function updateButtonColors(button, isSel, playerName)
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBg}):Play()
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = targetTextColor}):Play()
     button.Text = targetText
-
     local existingStroke = button:FindFirstChild("NeonStroke")
     if isSel then
         if not existingStroke then
@@ -663,6 +760,11 @@ local function immediateAttack(player)
     makeHighlight(player)
 end
 local function toggleSelect(player)
+    if isBlacklisted(player) then
+        notify("❌ " .. player.Name .. " is blacklisted! Cannot select.", 2)
+        return
+    end
+   
     if not player.Character or not player.Character:FindFirstChild("Humanoid") or player.Character:FindFirstChild("Humanoid").Health <= 0 then
         notify(player.Name .. " is not a valid target", 2)
         return
@@ -678,7 +780,6 @@ local function toggleSelect(player)
     if foundIndex then
         table.remove(selectedTargets, foundIndex)
         notify("Deselected: " .. player.Name .. " (" .. #selectedTargets .. " left)", 1.5)
-
         if multiOn and foundIndex then
             if foundIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
@@ -689,10 +790,8 @@ local function toggleSelect(player)
             if currentMultiIndex > #selectedTargets then currentMultiIndex = 1 end
         end
     else
-
         table.insert(selectedTargets, 1, player)
         notify("Selected: " .. player.Name .. " (" .. #selectedTargets .. " total)", 1.5)
-
         if multiOn then
             currentMultiIndex = 1
             immediateAttack(player)
@@ -702,13 +801,11 @@ local function toggleSelect(player)
     end
     Config.SelectedTargets = selectedTargets
     SaveConfig()
-
     local button = playerButtons[player]
     if button then
         local isSel = isSelected(player)
         updateButtonColors(button, isSel, player.Name)
     end
-
     if autoSelectedOn and #selectedTargets ~= 1 then
         autoSelectedOn = false
         UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
@@ -729,7 +826,6 @@ local function updateSelectedBtnsText()
     UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): " .. (autoSelectedOn and "ON" or "OFF")
     UI.MultiSelectedBtn.Text = "Multi Kill Selected: " .. (multiOn and "ON (" .. #selectedTargets .. ")" or "OFF")
 end
-
 local function makeHighlight(player, multiIndex)
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
@@ -765,17 +861,11 @@ local function makeHighlight(player, multiIndex)
         highlightGui = bg
     end)
 end
-local function clearHighlight()
-    pcall(function()
-        if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
-        highlightGui = nil
-    end)
-end
-
 local function chooseRandom()
     local pls = {}
     for _,p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and
+            not isBlacklisted(p) and
             p.Character and
             p.Character:FindFirstChild("Humanoid") and
             p.Character:FindFirstChild("Humanoid").Health > 0 then
@@ -785,12 +875,10 @@ local function chooseRandom()
     if #pls == 0 then return nil end
     return pls[math.random(1,#pls)]
 end
-
 local function getPing()
     local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
     return math.clamp(ping, 0.05, 0.5)
 end
-
 local function predictTargetPosition(targetRoot)
     if not predictOn or not targetRoot then return targetRoot.Position end
     local ping = getPing()
@@ -800,7 +888,6 @@ local function predictTargetPosition(targetRoot)
     end
     return targetRoot.Position
 end
-
 local function teleportToPosition(targetRoot, hrp)
     local targetPos = predictTargetPosition(targetRoot)
     local radius = 5
@@ -819,7 +906,6 @@ local function teleportToPosition(targetRoot, hrp)
         hrp.CFrame = CFrame.lookAt(newPos, targetPos)
     end
 end
-
 local function toggleStealth()
     local char = LocalPlayer.Character
     if not char then return end
@@ -851,7 +937,6 @@ local function toggleStealth()
         notify("Stealth OFF", 1.5)
     end
 end
-
 local function speedBoostStep()
     local char = LocalPlayer.Character
     if not char or not speedBoostOn then return end
@@ -860,7 +945,6 @@ local function speedBoostStep()
         humanoid.WalkSpeed = 50
     end
 end
-
 local function faceTargetStep()
     if not currentTarget or not currentTarget.Character then return end
     local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
@@ -869,7 +953,6 @@ local function faceTargetStep()
     if not targetRoot or not hrp then return end
     hrp.CFrame = CFrame.lookAt(hrp.Position, predictTargetPosition(targetRoot))
 end
-
 local function spamAttack()
     if not currentTarget or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
@@ -905,7 +988,7 @@ local function spamAttack()
         end
     end
 end
-
+-- Continue with remaining functions...
 local function createSafePlatform()
     if not hasPremium then return end
     if safePlatform then return end
@@ -961,7 +1044,6 @@ local function removeSafePlatform()
         end
     end
 end
-
 local PlaceId = game.PlaceId
 local function getServers(minPlayers, maxPlayers)
     local servers = {}
@@ -970,18 +1052,15 @@ local function getServers(minPlayers, maxPlayers)
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100",
             "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100"
         }
-
         for _, url in ipairs(urls) do
             local response = game:HttpGet(url)
             local data = HttpService:JSONDecode(response)
-
             for _, server in ipairs(data.data) do
                 if server.playing >= minPlayers and server.playing <= maxPlayers and server.id ~= game.JobId then
                     table.insert(servers, server)
                 end
             end
         end
-
         return servers
     end)
     if success then
@@ -999,14 +1078,11 @@ local function hopServer()
         table.sort(servers, function(a, b)
             return math.abs(a.playing - 12) < math.abs(b.playing - 12)
         end)
-
         local bestServer = servers[1]
         notify("Hopping to server with "..bestServer.playing.." players...", 3)
-
         local success, err = pcall(function()
             TeleportService:TeleportToPlaceInstance(PlaceId, bestServer.id, LocalPlayer)
         end)
-
         if not success then
             notify("Server hop failed, trying alternative...", 2)
             if #servers > 1 then
@@ -1026,12 +1102,12 @@ local function hopServer()
         end
     end
 end
-
+-- Player button creation
 local function createPlayerButton(player, yPosition)
-
     if playerButtons[player] then
         playerButtons[player]:Destroy()
     end
+   
     local button = Instance.new("TextButton")
     button.Name = player.Name
     button.Size = UDim2.new(1, -10, 0, 36)
@@ -1045,7 +1121,6 @@ local function createPlayerButton(player, yPosition)
     button.TextColor3 = isSel and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(240,240,240)
     button.AutoButtonColor = false
     button.Parent = UI.PlayerList
-
     if isSel then
         local neonStroke = Instance.new("UIStroke", button)
         neonStroke.Name = "NeonStroke"
@@ -1059,13 +1134,13 @@ local function createPlayerButton(player, yPosition)
             end
         end)
     end
-
     local statusIndicator = Instance.new("Frame", button)
     statusIndicator.Name = "StatusIndicator"
     statusIndicator.Size = UDim2.new(0, 8, 0, 8)
     statusIndicator.Position = UDim2.new(1, -14, 0.5, -4)
     statusIndicator.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     statusIndicator.BorderSizePixel = 0
+   
     local function updateStatus()
         if player.Character then
             local humanoid = player.Character:FindFirstChild("Humanoid")
@@ -1078,7 +1153,6 @@ local function createPlayerButton(player, yPosition)
         end
     end
     updateStatus()
-
     button.MouseEnter:Connect(function()
         local currentSel = isSelected(player)
         if not currentSel then
@@ -1091,12 +1165,50 @@ local function createPlayerButton(player, yPosition)
             TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 8, 8)}):Play()
         end
     end)
-
     button.MouseButton1Click:Connect(function()
         toggleSelect(player)
     end)
-
     playerButtons[player] = button
+    return button
+end
+-- Blacklist player button creation
+local function createBlacklistButton(player, yPosition)
+    if blacklistButtons[player] then
+        blacklistButtons[player]:Destroy()
+    end
+   
+    local button = Instance.new("TextButton")
+    button.Name = player.Name
+    button.Size = UDim2.new(1, -10, 0, 36)
+    button.Position = UDim2.new(0, 5, 0, yPosition)
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 13
+    button.AutoButtonColor = false
+    button.Parent = UI.BlacklistPlayerList
+   
+    updateBlacklistButton(button, player)
+    button.MouseEnter:Connect(function()
+        if player.Name ~= PROTECTED_USER and not isBlacklisted(player) and not selectedBlacklistPlayers[player] then
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 12, 12)}):Play()
+        end
+    end)
+   
+    button.MouseLeave:Connect(function()
+        if player.Name ~= PROTECTED_USER and not isBlacklisted(player) and not selectedBlacklistPlayers[player] then
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 8, 8)}):Play()
+        end
+    end)
+    button.MouseButton1Click:Connect(function()
+        -- Toggle selection highlight
+        if selectedBlacklistPlayers[player] then
+            selectedBlacklistPlayers[player] = nil
+        else
+            selectedBlacklistPlayers[player] = true
+        end
+        updateBlacklistButton(button, player)
+    end)
+    blacklistButtons[player] = button
     return button
 end
 local function refreshPlayerList()
@@ -1109,9 +1221,7 @@ local function refreshPlayerList()
                 createPlayerButton(player, yPosition)
                 yPosition = yPosition + 40
             else
-
                 playerButtons[player].Position = UDim2.new(0, 5, 0, yPosition)
-
                 local status = playerButtons[player]:FindFirstChild("StatusIndicator")
                 if status then
                     spawn(function()
@@ -1127,14 +1237,12 @@ local function refreshPlayerList()
                         updateStatusForButton()
                     end)
                 end
-
                 local isSel = isSelected(player)
                 updateButtonColors(playerButtons[player], isSel, player.Name)
                 yPosition = yPosition + 40
             end
         end
     end
-
     for player, button in pairs(playerButtons) do
         if not visiblePlayers[player] then
             button:Destroy()
@@ -1143,7 +1251,21 @@ local function refreshPlayerList()
     end
     UI.PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
 end
-
+local function refreshBlacklistList()
+    for _, button in pairs(blacklistButtons) do
+        button:Destroy()
+    end
+    blacklistButtons = {}
+   
+    local yPosition = 0
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            createBlacklistButton(player, yPosition)
+            yPosition = yPosition + 40
+        end
+    end
+    UI.BlacklistPlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
+end
 spawn(function()
     while true do
         if autoRefreshOn then
@@ -1152,7 +1274,6 @@ spawn(function()
         wait(5)
     end
 end)
-
 local function onCharacterAdded(char)
     wait(1)
     if stealthOn then
@@ -1177,7 +1298,7 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 if LocalPlayer.Character then
     onCharacterAdded(LocalPlayer.Character)
 end
-
+-- Main game loop
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
@@ -1218,7 +1339,6 @@ spawn(function()
             continue
         end
         local hrp = char:FindFirstChild("HumanoidRootPart")
-
         if multiOn and #selectedTargets < 2 then
             multiOn = false
             UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
@@ -1229,9 +1349,8 @@ spawn(function()
             currentTarget = nil
             currentMultiIndex = 1
         end
-
         if autoOn and not safePlatform then
-            if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 then
+            if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 or isBlacklisted(currentTarget) then
                 currentTarget = chooseRandom()
                 if currentTarget then
                     notify("Selected random: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 1.8)
@@ -1261,10 +1380,9 @@ spawn(function()
                 end
             end
         end
-
         if autoSelectedOn and not safePlatform and #selectedTargets == 1 then
             currentTarget = selectedTargets[1]
-            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 then
+            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 and not isBlacklisted(currentTarget) then
                 local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
                 if tick() - lastAttack > attackRate then
                     teleportToPosition(targetRoot, hrp)
@@ -1288,12 +1406,10 @@ spawn(function()
                 clearHighlight()
             end
         end
-
         if multiOn and not safePlatform and #selectedTargets >= 2 then
-
             if tick() - lastTargetCheck > targetCheckRate then
                 local target = selectedTargets[currentMultiIndex]
-                local isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0
+                local isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target)
                 if not isValid then
                     local oldIndex = currentMultiIndex
                     local oldTarget = target
@@ -1303,12 +1419,11 @@ spawn(function()
                         currentMultiIndex = math.fmod(currentMultiIndex, #selectedTargets) + 1
                         target = selectedTargets[currentMultiIndex]
                         attempts = attempts + 1
-                        isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0
+                        isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target)
                     until isValid or attempts >= #selectedTargets
                     lastTargetCheck = tick()
                     local switched = false
                     if attempts >= #selectedTargets then
-
                         currentMultiIndex = 1
                         currentTarget = nil
                         clearHighlight()
@@ -1317,7 +1432,6 @@ spawn(function()
                             lastSwitchNotify = tick()
                         end
                     else
-
                         currentTarget = target
                         makeHighlight(currentTarget, currentMultiIndex)
                         switched = true
@@ -1327,14 +1441,12 @@ spawn(function()
                         end
                     end
                 else
-
                     currentTarget = target
                     makeHighlight(currentTarget, currentMultiIndex)
                     lastTargetCheck = tick()
                 end
             end
-
-            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character.Humanoid.Health > 0 then
+            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character.Humanoid.Health > 0 and not isBlacklisted(currentTarget) then
                 local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
                 if targetRoot and hrp then
                     if tick() - lastAttack > attackRate then
@@ -1352,13 +1464,12 @@ spawn(function()
                     lastFace = tick()
                 end
             else
-
                 lastTargetCheck = 0
             end
         end
     end
 end)
-
+-- Button handlers
 UI.AutoBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1376,7 +1487,6 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
         Config.AutoSelectedOn = false
         Config.MultiOn = false
         SaveConfig()
-
         notify("Auto Kill Random enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
@@ -1408,7 +1518,6 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
             Config.AutoOn = false
             Config.MultiOn = false
             SaveConfig()
-
             currentTarget = selectedTargets[1]
             notify("Auto Kill Single enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
@@ -1421,7 +1530,6 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
         notify("Select exactly 1 target for Single mode.", 2)
     end
 end)
-
 UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
@@ -1440,11 +1548,10 @@ UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
             Config.AutoOn = false
             Config.AutoSelectedOn = false
             SaveConfig()
-
             currentMultiIndex = 1
             lastTargetCheck = 0
             currentTarget = selectedTargets[1]
-            notify("Multi Kill enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Sequential: đánh 1 chết mới đến 2nd, cycle quay lại 1 nếu hết ("..#selectedTargets.." targets)", 2.5)
+            notify("Multi Kill enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Sequential mode ("..#selectedTargets.." targets)", 2.5)
             makeHighlight(currentTarget, currentMultiIndex)
         else
             notify("Multi Kill disabled", 1.5)
@@ -1461,6 +1568,7 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
     local players = {}
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and
+            not isBlacklisted(player) and
             player.Character and
             player.Character:FindFirstChild("Humanoid") and
             player.Character:FindFirstChild("Humanoid").Health > 0 and
@@ -1486,7 +1594,16 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
         notify("No other valid targets found", 2)
     end
 end)
-
+UI.BlacklistBtn.MouseButton1Click:Connect(function()
+    UI.BlacklistFrame.Visible = not UI.BlacklistFrame.Visible
+    if UI.BlacklistFrame.Visible then
+        refreshBlacklistList()
+        notify("Blacklist Manager opened", 1.5)
+    end
+end)
+blacklistCloseBtn.MouseButton1Click:Connect(function()
+    UI.BlacklistFrame.Visible = false
+end)
 UI.PositionModeBtn.MouseButton1Click:Connect(function()
     if positionMode == "Behind" then
         positionMode = "Under"
@@ -1508,7 +1625,6 @@ UI.PositionModeBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
-
 UI.StealthBtn.MouseButton1Click:Connect(function()
     stealthOn = not stealthOn
     UI.StealthBtn.Text = "Stealth Mode: "..(stealthOn and "ON" or "OFF")
@@ -1516,7 +1632,6 @@ UI.StealthBtn.MouseButton1Click:Connect(function()
     SaveConfig()
     toggleStealth()
 end)
-
 UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
     speedBoostOn = not speedBoostOn
     UI.SpeedBoostBtn.Text = "Speed Boost: "..(speedBoostOn and "ON" or "OFF")
@@ -1535,7 +1650,6 @@ UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
         notify("Speed Boost disabled", 1.5)
     end
 end)
-
 UI.PredictBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Predict Direction requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1551,7 +1665,6 @@ UI.PredictBtn.MouseButton1Click:Connect(function()
         notify("Direction Prediction disabled", 1.5)
     end
 end)
-
 UI.ServerHopBtn.MouseButton1Click:Connect(function()
     serverHopOn = not serverHopOn
     UI.ServerHopBtn.Text = "Auto Server Hop: "..(serverHopOn and "ON" or "OFF")
@@ -1563,7 +1676,6 @@ UI.ServerHopBtn.MouseButton1Click:Connect(function()
         notify("Auto Server Hop disabled", 1.5)
     end
 end)
-
 UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     if not hasPremium then
         notify("Auto Safe Zone requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
@@ -1605,7 +1717,6 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
         notify("Auto Refresh disabled", 1.5)
     end
 end)
-
 Players.PlayerRemoving:Connect(function(p)
     if currentTarget == p then
         currentTarget = nil
@@ -1624,9 +1735,8 @@ Players.PlayerRemoving:Connect(function(p)
     if found then
         Config.SelectedTargets = selectedTargets
         SaveConfig()
-        notify("Target " .. p.Name .. " out/left. Removed from list (" .. #selectedTargets .. " left)", 2)
+        notify("Target " .. p.Name .. " left. Removed from list (" .. #selectedTargets .. " left)", 2)
         updateSelectedBtnsText()
-
         if multiOn then
             if removedIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
@@ -1637,11 +1747,11 @@ Players.PlayerRemoving:Connect(function(p)
             lastTargetCheck = 0
             if #selectedTargets >= 2 then
                 local tempTarget = selectedTargets[currentMultiIndex]
-                local isTempValid = tempTarget and tempTarget.Character and tempTarget.Character:FindFirstChild("Humanoid") and tempTarget.Character.Humanoid.Health > 0
+                local isTempValid = tempTarget and tempTarget.Character and tempTarget.Character:FindFirstChild("Humanoid") and tempTarget.Character.Humanoid.Health > 0 and not isBlacklisted(tempTarget)
                 if isTempValid then
                     currentTarget = tempTarget
                     makeHighlight(currentTarget, currentMultiIndex)
-                    notify("Multi: Tiếp theo target sau out.", 1.5)
+                    notify("Multi: Next target after player left.", 1.5)
                 end
             else
                 multiOn = false
@@ -1654,7 +1764,6 @@ Players.PlayerRemoving:Connect(function(p)
                 currentMultiIndex = 1
             end
         end
-
         if autoSelectedOn and #selectedTargets ~= 1 then
             autoSelectedOn = false
             UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
@@ -1663,10 +1772,13 @@ Players.PlayerRemoving:Connect(function(p)
             notify("Single mode disabled - Select exactly 1 target.", 2)
         end
     end
-
     if playerButtons[p] then
         playerButtons[p]:Destroy()
         playerButtons[p] = nil
+    end
+    if blacklistButtons[p] then
+        blacklistButtons[p]:Destroy()
+        blacklistButtons[p] = nil
     end
     if autoOn then
         spawn(function()
@@ -1683,8 +1795,10 @@ end)
 Players.PlayerAdded:Connect(function(p)
     wait(2)
     refreshPlayerList()
+    if UI.BlacklistFrame.Visible then
+        refreshBlacklistList()
+    end
 end)
-
 spawn(function()
     while true do
         for i,child in ipairs(UI.Crack:GetChildren()) do
@@ -1697,15 +1811,93 @@ spawn(function()
 end)
 spawn(function()
     while true do
-        TweenService:Create(UI.Glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.75}):Play()
-        wait(1.2)
+-- Animation for glow effect (tiếp tục phần còn lại)
         TweenService:Create(UI.Glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.95}):Play()
         wait(1.2)
     end
 end)
 
+-- Initialize
 refreshPlayerList()
 updateSelectedBtnsText()
+
+-- Additional keybind for manual server hop
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F8 then
+        hopServer()
+    elseif input.KeyCode == Enum.KeyCode.F9 then
+        -- Emergency safe zone toggle
+        if hasPremium then
+            safeZoneOn = not safeZoneOn
+            UI.SafeZoneBtn.Text = "Auto Safe Zone: "..(safeZoneOn and "ON" or "OFF")
+            Config.SafeZoneOn = safeZoneOn
+            SaveConfig()
+            if safeZoneOn then
+                createSafePlatform()
+                notify("Emergency Safe Zone Activated!", 2)
+            else
+                removeSafePlatform()
+                notify("Safe Zone Deactivated", 2)
+            end
+        else
+            notify("Premium feature required!", 2)
+        end
+    end
+end)
+
+-- Global functions for external use
 getgenv().LuexHopServer = hopServer
-print("Luex ULTRA v3.1: Sequential Multi (đánh 1 chết mới đến 2nd, cycle quay lại 1 nếu hết, chỉ remove out) + Immediate Attack + Shared List + Neon Revert + Scrollable loaded - Cực xịn cực mạnh xịn sò 😈💥")
-notify("Luex ULTRA v3.1 Loaded! Multi: Enable -> Đánh sequential 1 chết mới 2nd, cycle back nếu hết | Ấn target = Đánh ngay if Multi ON! Scroll left!", 4)
+getgenv().LuexToggleAuto = function()
+    UI.AutoBtn.MouseButton1Click()
+end
+getgenv().LuexToggleMulti = function()
+    UI.MultiSelectedBtn.MouseButton1Click()
+end
+getgenv().LuexToggleStealth = function()
+    UI.StealthBtn.MouseButton1Click()
+end
+getgenv().LuexGetTarget = function()
+    return currentTarget and currentTarget.Name or "No target"
+end
+getgenv().LuexSelectTarget = function(playerName)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Name == playerName and player ~= LocalPlayer then
+            if isBlacklisted(player) then
+                notify("Player is blacklisted!", 2)
+                return false
+            end
+            if not isSelected(player) then
+                toggleSelect(player)
+                return true
+            else
+                notify("Player already selected", 2)
+                return true
+            end
+        end
+    end
+    notify("Player not found", 2)
+    return false
+end
+
+-- Auto-save configuration when leaving
+game:BindToClose(function()
+    SaveConfig()
+    notify("Config saved. Goodbye!", 1)
+    wait(0.5)
+end)
+
+-- Final notification
+print("Luex ULTRA v3.2: Blacklist Protection + Sequential Multi loaded - Cực xịn cực mạnh xịn sò 😈💥")
+notify("Luex ULTRA v3.2 Loaded! Protected user: " .. PROTECTED_USER .. " | Blacklist enabled!", 4)
+
+-- Check if protected user is in game and notify
+spawn(function()
+    wait(3)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Name == PROTECTED_USER then
+            notify("🛡️ PROTECTED USER DETECTED: " .. PROTECTED_USER .. " (Auto-protected)", 3)
+            break
+        end
+    end
+end)
