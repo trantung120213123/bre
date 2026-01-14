@@ -538,8 +538,8 @@ local switchNotifyCooldown = 2
 local safePlatform = nil
 local wasAutoKillOn = false
 local toolList = {
-    "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Table Flip",
-    "Omni-Directional Punch", "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
+    "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Serious Punch",
+    "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
     "Water Stream Cutting Fist", "The Final Hunt", "Rock Splitting Fist", "Crushed Rock", "Machine Gun Blows",
     "Ignition Burst", "Blitz Shot", "Jet Dive", "Thunder Kick", "Speedblitz Dropkick", "Flamewave Cannon",
     "Incinerate", "Flash Strike", "Whirlwind Kick", "Scatter", "Explosive Shuriken", "Twinblade Rush", "Straight On",
