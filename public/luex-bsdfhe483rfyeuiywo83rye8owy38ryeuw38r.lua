@@ -8,7 +8,7 @@ local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local PREMIUM_KEY = "1"
 local hasPremium = getgenv().LuexKey == PREMIUM_KEY
-local PROTECTED_USER = "braniothecraft5"
+local PROTECTED_USER = "tung1202222222"
 local Config = {
     AutoOn = false,
     AutoSelectedOn = false,
