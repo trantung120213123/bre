@@ -1,2 +1,2 @@
-loadstring(game:HttpGet("https://pastefy.app/Blj2q8i4/raw"))()
-loadstring(game:HttpGet("https://pastefy.app/9WIXYBMN/raw"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/trantung120213123/Hackroblox/refs/heads/main/autorj.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/trantung120213123/Hackroblox/refs/heads/main/autocheck.lua"))()
