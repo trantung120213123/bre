@@ -100,8 +100,8 @@ local function SendWebhook(title, desc, fields, color)
         timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ", os.time() + 7*3600),
         thumbnail = {url = "https://files.catbox.moe/49x28e.jpg"},
         footer = {
-            text = "Auto Rejoin PRO v3.0",
-            icon_url = "https://files.catbox.moe/49x28e.jpg"
+            text = CONFIG.ICON,
+            icon_url = CONFIG.ICON
         }
     }
 
@@ -112,7 +112,7 @@ local function SendWebhook(title, desc, fields, color)
             Headers = {["Content-Type"]="application/json"},
             Body = HttpService:JSONEncode({
                 username = "Auto Rejoin PRO",
-                avatar_url = "https://files.catbox.moe/49x28e.jpg",
+                avatar_url = CONFIG.ICON,
                 embeds = {embed}
             })
         })
