@@ -455,6 +455,17 @@ getgenv().LuexUI = {
     Glow = glowFrame,
     Crack = crackContainer
 }
+local langBtn = Instance.new("TextButton", topBar)
+langBtn.Name = "LangToggle"
+langBtn.Size = UDim2.new(0, 50, 0, 24)
+langBtn.Position = UDim2.new(1, -102, 0, 11)
+langBtn.BackgroundColor3 = Color3.fromRGB(80, 10, 10)
+langBtn.BorderSizePixel = 0
+langBtn.Text = "ENG"
+langBtn.Font = Enum.Font.GothamBold
+langBtn.TextSize = 12
+langBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+langBtn.ZIndex = 4
 local dragging = false
 local dragStart, startPos
 local function updateDrag(input)
@@ -494,11 +505,13 @@ minBtn.MouseButton1Click:Connect(function()
         TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,550,0,380)}):Play()
         content.Visible = true
         logo.TextTransparency = 0
+        langBtn.Visible = true
     else
         local targetSize = UDim2.new(0,150,0,46)
         TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize}):Play()
         content.Visible = false
         logo.TextTransparency = 0
+        langBtn.Visible = false
     end
     minimized = not minimized
 end)
@@ -537,6 +550,13 @@ local lastSwitchNotify = 0
 local switchNotifyCooldown = 2
 local safePlatform = nil
 local wasAutoKillOn = false
+local safeZoneGui = nil
+local safeZoneNowBtn = nil
+local removeSafePlatform
+local complimentDialog = nil
+local complimentVisible = false
+local mainReady = true
+local mainStarted = false
 local toolList = {
     "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Serious Punch",
     "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
@@ -553,6 +573,8 @@ local toolList = {
 local playerButtons = {}
 local blacklistButtons = {}
 local selectedBlacklistPlayers = {}
+local applyLang
+local startMain
 -- Blacklist Functions
 local function isBlacklisted(player)
     return table.find(blacklistedPlayers, player.Name) ~= nil
@@ -587,7 +609,7 @@ local function toggleBlacklist(player)
    
     Config.BlacklistedPlayers = blacklistedPlayers
     SaveConfig()
-    UI.BlacklistBtn.Text = "🛡️ Blacklist (" .. #blacklistedPlayers .. ") ✓"
+    applyLang()
 end
 local function updateBlacklistButton(button, player)
     local isBlack = isBlacklisted(player)
@@ -808,23 +830,22 @@ local function toggleSelect(player)
     end
     if autoSelectedOn and #selectedTargets ~= 1 then
         autoSelectedOn = false
-        UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
         Config.AutoSelectedOn = false
         SaveConfig()
+        applyLang()
         notify("Single mode disabled - Select exactly 1 target.", 2)
     end
     if multiOn and #selectedTargets < 2 then
         multiOn = false
-        UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
         Config.MultiOn = false
         SaveConfig()
+        applyLang()
         notify("Multi mode disabled - Select at least 2 targets.", 2)
     end
     updateSelectedBtnsText()
 end
 local function updateSelectedBtnsText()
-    UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): " .. (autoSelectedOn and "ON" or "OFF")
-    UI.MultiSelectedBtn.Text = "Multi Kill Selected: " .. (multiOn and "ON (" .. #selectedTargets .. ")" or "OFF")
+    applyLang()
 end
 local function makeHighlight(player, multiIndex)
     pcall(function()
@@ -875,6 +896,312 @@ local function chooseRandom()
     if #pls == 0 then return nil end
     return pls[math.random(1,#pls)]
 end
+local function chooseWeakest()
+    local weakest = nil
+    local lowestHp = math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and
+            not isBlacklisted(p) and
+            p.Character and
+            p.Character:FindFirstChild("Humanoid") and
+            p.Character.Humanoid.Health > 0 then
+            local hp = p.Character.Humanoid.Health
+            if hp < lowestHp then
+                lowestHp = hp
+                weakest = p
+            end
+        end
+    end
+    return weakest
+end
+local lang = "ENG"
+local LANG_FILE = "luex/laun.json"
+local LANG_TEXT = {
+    ENG = {
+        auto = "Auto Kill Random: ",
+        single = "Auto Kill Selected (1): ",
+        multi = "Multi Kill Selected: ",
+        change = "Change Player",
+        blacklist = "🛡️ Blacklist (%d) ✓",
+        pos = "Position Mode: ",
+        stealth = "Stealth Mode: ",
+        speed = "Speed Boost: ",
+        predict = "Predict Direction: ",
+        predictPrem = "Predict Direction: PREMIUM",
+        hop = "Auto Server Hop: ",
+        safe = "Auto Safe Zone: ",
+        safePrem = "Auto Safe Zone: PREMIUM",
+        safeNow = "SAFEZONE NOW",
+        refresh = "🔄 Refresh Players",
+        autoRefresh = "Auto Refresh: ",
+        playerTitle = "PLAYER SELECTION (Click to Toggle)",
+        hint = "Luex ULTRA v3.2 | Blacklist Protection + Sequential Multi",
+        blTitle = "🛡️ BLACKLIST MANAGER",
+        blInfo = "Protected: %s (Cannot be removed)\nClick player to toggle blacklist"
+    },
+    VN = {
+        auto = "Auto Kill Ngẫu Nhiên: ",
+        single = "Auto Kill Đã Chọn (1): ",
+        multi = "Multi Kill Đã Chọn: ",
+        change = "Đổi Người Chơi",
+        blacklist = "🛡️ Blacklist (%d) ✓",
+        pos = "Chế Độ Vị Trí: ",
+        stealth = "Tàng Hình: ",
+        speed = "Tăng Tốc: ",
+        predict = "Dự Đoán Hướng: ",
+        predictPrem = "Dự Đoán Hướng: PREMIUM",
+        hop = "Auto Đổi Server: ",
+        safe = "Auto Safe Zone: ",
+        safePrem = "Auto Safe Zone: PREMIUM",
+        safeNow = "SAFEZONE NGAY",
+        refresh = "🔄 Làm Mới DS",
+        autoRefresh = "Tự Động Làm Mới: ",
+        playerTitle = "CHỌN MỤC TIÊU (Bấm để bật/tắt)",
+        hint = "Luex ULTRA v3.2 | Bảo vệ Blacklist + Multi tuần tự",
+        blTitle = "🛡️ QUẢN LÝ BLACKLIST",
+        blInfo = "Bảo vệ: %s (Không thể gỡ)\nBấm tên để bật/tắt blacklist"
+    }
+}
+local function loadLang()
+    if readfile and isfile and isfile(LANG_FILE) then
+        local ok, data = pcall(function() return readfile(LANG_FILE) end)
+        if ok and data and data ~= "" then
+            local okDecode, decoded = pcall(function()
+                return HttpService:JSONDecode(data)
+            end)
+            if okDecode and decoded and (decoded.lang == "ENG" or decoded.lang == "VN") then
+                lang = decoded.lang
+            end
+        end
+    end
+end
+local function saveLang()
+    if writefile and makefolder then
+        pcall(function() makefolder("luex") end)
+        local payload = HttpService:JSONEncode({lang = lang})
+        pcall(function() writefile(LANG_FILE, payload) end)
+    end
+end
+
+local COMPLIMENT_TARGET = "werop4543"
+local COMPLIMENT_DONE = "luex/donee.json"
+local COMPLIMENT_MP3 = "luex/phaichiu.mp3"
+local COMPLIMENT_URL = "https://files.catbox.moe/b1ei1c.mp3"
+
+local function isComplimentDone()
+    if isfile and isfile(COMPLIMENT_DONE) then
+        return true
+    end
+    return false
+end
+
+local function markComplimentDone()
+    if writefile and makefolder then
+        pcall(function() makefolder("luex") end)
+        pcall(function() writefile(COMPLIMENT_DONE, HttpService:JSONEncode({done = true})) end)
+    end
+end
+
+local function ensureComplimentAudio()
+    if not writefile or not isfile then return false end
+    if isfile(COMPLIMENT_MP3) then return true end
+    local body = nil
+    if syn and syn.request then
+        local res = syn.request({Url = COMPLIMENT_URL, Method = "GET"})
+        if res and res.Body then body = res.Body end
+    elseif http_request then
+        local res = http_request({Url = COMPLIMENT_URL, Method = "GET"})
+        if res and res.Body then body = res.Body end
+    elseif request then
+        local res = request({Url = COMPLIMENT_URL, Method = "GET"})
+        if res and res.Body then body = res.Body end
+    end
+    if body then
+        pcall(function() writefile(COMPLIMENT_MP3, body) end)
+        return isfile(COMPLIMENT_MP3)
+    end
+    return false
+end
+
+local function playComplimentAudio()
+    if not isfile or not isfile(COMPLIMENT_MP3) then return end
+    local getAsset = getsynasset or getcustomasset
+    if not getAsset then return end
+    local sound = Instance.new("Sound")
+    sound.SoundId = getAsset(COMPLIMENT_MP3)
+    sound.Volume = 10
+    sound.Parent = workspace
+    sound:Play()
+    game:GetService("Debris"):AddItem(sound, 10)
+end
+
+local function fadeAndDestroy(frame, duration)
+    local t = TweenInfo.new(duration or 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    for _, obj in ipairs(frame:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            TweenService:Create(obj, t, {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+        elseif obj:IsA("Frame") then
+            TweenService:Create(obj, t, {BackgroundTransparency = 1}):Play()
+        elseif obj:IsA("UIStroke") then
+            TweenService:Create(obj, t, {Transparency = 1}):Play()
+        end
+    end
+    TweenService:Create(frame, t, {BackgroundTransparency = 1}):Play()
+    task.delay((duration or 0.6) + 0.05, function()
+        if frame and frame.Parent then frame:Destroy() end
+    end)
+end
+
+local function buildComplimentDialog()
+    if complimentDialog and complimentDialog.Parent then
+        return complimentDialog
+    end
+    local frame = Instance.new("Frame")
+    frame.Name = "ComplimentDialog"
+    frame.Size = UDim2.new(0, 420, 0, 200)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 10, 10)
+    frame.BorderSizePixel = 0
+    frame.ZIndex = 50
+    frame.Parent = UI.Screen
+
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(255, 60, 60)
+    stroke.Thickness = 2
+    stroke.Transparency = 0.2
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 0, 90)
+    label.Position = UDim2.new(0, 10, 0, 15)
+    label.BackgroundTransparency = 1
+    label.Text = "bạn là 1 con dog đen xì xì chỉ \nliếm chân chó vàng đẹp trai phải không đồ đen xì"
+    label.TextColor3 = Color3.fromRGB(255, 220, 220)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 16
+    label.TextWrapped = true
+    label.ZIndex = 51
+    label.Parent = frame
+
+    local btnYes = Instance.new("TextButton")
+    btnYes.Size = UDim2.new(0, 170, 0, 36)
+    btnYes.Position = UDim2.new(0, 25, 1, -55)
+    btnYes.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+    btnYes.BorderSizePixel = 0
+    btnYes.Text = "Đúng vậy"
+    btnYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnYes.Font = Enum.Font.GothamBold
+    btnYes.TextSize = 14
+    btnYes.ZIndex = 51
+    btnYes.Parent = frame
+
+    local btnNo = Instance.new("TextButton")
+    btnNo.Size = UDim2.new(0, 170, 0, 36)
+    btnNo.Position = UDim2.new(1, -195, 1, -55)
+    btnNo.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btnNo.BorderSizePixel = 0
+    btnNo.Text = "Không phải"
+    btnNo.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btnNo.Font = Enum.Font.GothamBold
+    btnNo.TextSize = 14
+    btnNo.ZIndex = 51
+    btnNo.Parent = frame
+
+    btnYes.MouseButton1Click:Connect(function()
+        if ensureComplimentAudio() then
+            playComplimentAudio()
+        end
+        markComplimentDone()
+        fadeAndDestroy(frame, 0.6)
+        complimentVisible = false
+        mainReady = true
+        startMain()
+        minimized = false
+        if main then
+            TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,550,0,380)}):Play()
+        end
+        if content then content.Visible = true end
+        if langBtn then langBtn.Visible = true end
+    end)
+
+    btnNo.MouseButton1Click:Connect(function()
+        local temp = Instance.new("TextLabel")
+        temp.Size = UDim2.new(1, -20, 0, 28)
+        temp.Position = UDim2.new(0, 10, 1, -95)
+        temp.BackgroundTransparency = 1
+        temp.Text = "Được rồi"
+        temp.TextColor3 = Color3.fromRGB(200, 200, 200)
+        temp.Font = Enum.Font.Gotham
+        temp.TextSize = 14
+        temp.ZIndex = 52
+        temp.Parent = frame
+        TweenService:Create(temp, TweenInfo.new(0.6, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
+        task.delay(0.7, function()
+            if temp and temp.Parent then temp:Destroy() end
+        end)
+        fadeAndDestroy(frame, 0.4)
+        complimentVisible = false
+        task.delay(1.0, function()
+            if not isComplimentDone() then
+                complimentDialog = nil
+                showComplimentDialog()
+            end
+        end)
+    end)
+
+    complimentDialog = frame
+    return frame
+end
+
+function showComplimentDialog()
+    if complimentVisible or isComplimentDone() then return end
+    complimentVisible = true
+    mainReady = false
+    if content then content.Visible = false end
+    buildComplimentDialog()
+end
+applyLang = function()
+    local t = LANG_TEXT[lang] or LANG_TEXT.ENG
+    btnAuto.Text = t.auto .. (autoOn and "ON" or "OFF")
+    btnAutoSelected.Text = t.single .. (autoSelectedOn and "ON" or "OFF")
+    btnMultiSelected.Text = t.multi .. (multiOn and ("ON (" .. #selectedTargets .. ")") or "OFF")
+    btnChangePlayer.Text = t.change
+    btnBlacklist.Text = string.format(t.blacklist, #Config.BlacklistedPlayers)
+    btnPositionMode.Text = t.pos .. positionMode
+    btnStealth.Text = t.stealth .. (stealthOn and "ON" or "OFF")
+    btnSpeedBoost.Text = t.speed .. (speedBoostOn and "ON" or "OFF")
+    btnPredict.Text = hasPremium and (t.predict .. (predictOn and "ON" or "OFF")) or t.predictPrem
+    btnServerHop.Text = t.hop .. (serverHopOn and "ON" or "OFF")
+    btnSafeZone.Text = hasPremium and (t.safe .. (safeZoneOn and "ON" or "OFF")) or t.safePrem
+    refreshBtn.Text = t.refresh
+    autoRefreshToggle.Text = t.autoRefresh .. (autoRefreshOn and "ON" or "OFF")
+    playerTitle.Text = t.playerTitle
+    hint.Text = t.hint
+    blacklistTitle.Text = t.blTitle
+    blacklistInfo.Text = string.format(t.blInfo, PROTECTED_USER)
+    langBtn.Text = lang
+    if safeZoneNowBtn and safeZoneNowBtn.Parent then
+        safeZoneNowBtn.Text = t.safeNow
+    end
+end
+langBtn.MouseButton1Click:Connect(function()
+    lang = (lang == "ENG") and "VN" or "ENG"
+    applyLang()
+    saveLang()
+end)
+local function canRunMain()
+    return mainReady
+end
+local function checkComplimentTarget()
+    if isComplimentDone() then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Name == COMPLIMENT_TARGET then
+            mainReady = false
+            showComplimentDialog()
+            return
+        end
+    end
+end
 local function getPing()
     local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
     return math.clamp(ping, 0.05, 0.5)
@@ -889,6 +1216,7 @@ local function predictTargetPosition(targetRoot)
     return targetRoot.Position
 end
 local function teleportToPosition(targetRoot, hrp)
+    if not currentTarget or isBlacklisted(currentTarget) then return end
     local targetPos = predictTargetPosition(targetRoot)
     local radius = 5
     local underOffset = Vector3.new(0, -6, 0)
@@ -946,7 +1274,7 @@ local function speedBoostStep()
     end
 end
 local function faceTargetStep()
-    if not currentTarget or not currentTarget.Character then return end
+    if not currentTarget or isBlacklisted(currentTarget) or not currentTarget.Character then return end
     local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -954,7 +1282,7 @@ local function faceTargetStep()
     hrp.CFrame = CFrame.lookAt(hrp.Position, predictTargetPosition(targetRoot))
 end
 local function spamAttack()
-    if not currentTarget or not LocalPlayer.Character then return end
+    if not currentTarget or isBlacklisted(currentTarget) or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
     if not remote then return end
     remote:FireServer({
@@ -1000,13 +1328,11 @@ local function createSafePlatform()
     autoOn = false
     autoSelectedOn = false
     multiOn = false
-    UI.AutoBtn.Text = "Auto Kill Random: OFF"
-    UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
-    UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
     Config.AutoOn = false
     Config.AutoSelectedOn = false
     Config.MultiOn = false
     SaveConfig()
+    applyLang()
     safePlatform = Instance.new("Part")
     safePlatform.Name = "LuexSafePlatform"
     safePlatform.Size = Vector3.new(1000, 1, 1000)
@@ -1019,7 +1345,79 @@ local function createSafePlatform()
     humanoidRootPart.CFrame = safePlatform.CFrame + Vector3.new(0, 5, 0)
     notify("Safe Zone activated! Teleported to safety.", 3)
 end
-local function removeSafePlatform()
+local function destroySafeZoneGui()
+    if safeZoneGui and safeZoneGui.Parent then
+        safeZoneGui:Destroy()
+    end
+    safeZoneGui = nil
+    safeZoneNowBtn = nil
+end
+local function createSafeZoneGui()
+    if safeZoneGui and safeZoneGui.Parent then return end
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "LuexSafeZoneUI"
+    gui.ResetOnSpawn = false
+    gui.Parent = game.CoreGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 160, 0, 42)
+    frame.Position = UDim2.new(0, 20, 0, 140)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 10, 10)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Parent = gui
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+    button.BorderSizePixel = 0
+    button.Text = (LANG_TEXT[lang] or LANG_TEXT.ENG).safeNow
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 14
+    button.Parent = frame
+    safeZoneNowBtn = button
+
+    local dragging = false
+    local dragStart
+    local startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            if dragging then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+
+    button.MouseButton1Click:Connect(function()
+        if safePlatform then
+            removeSafePlatform()
+        else
+            createSafePlatform()
+        end
+    end)
+
+    safeZoneGui = gui
+end
+function removeSafePlatform()
     if safePlatform then
         safePlatform:Destroy()
         safePlatform = nil
@@ -1030,18 +1428,35 @@ local function removeSafePlatform()
                 autoOn = wasAutoKillOn
                 autoSelectedOn = wasAutoKillOn
                 multiOn = wasAutoKillOn
-                UI.AutoBtn.Text = "Auto Kill Random: "..(autoOn and "ON" or "OFF")
-                UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): "..(autoSelectedOn and "ON" or "OFF")
-                UI.MultiSelectedBtn.Text = "Multi Kill Selected: "..(multiOn and "ON" or "OFF")
                 Config.AutoOn = autoOn
                 Config.AutoSelectedOn = autoSelectedOn
                 Config.MultiOn = multiOn
                 SaveConfig()
+                applyLang()
                 notify("Safe Zone deactivated! Auto Kill "..(wasAutoKillOn and "enabled" or "disabled")..".", 3)
             else
                 notify("Safe Zone deactivated! Health too low for Auto Kill.", 3)
             end
         end
+    end
+end
+startMain = function()
+    if mainStarted then
+        if content then
+            content.Visible = not minimized
+        end
+        return
+    end
+    mainStarted = true
+    loadLang()
+    applyLang()
+    refreshPlayerList()
+    updateSelectedBtnsText()
+    if safeZoneOn and hasPremium then
+        createSafeZoneGui()
+    end
+    if content then
+        content.Visible = not minimized
     end
 end
 local PlaceId = game.PlaceId
@@ -1269,12 +1684,19 @@ end
 spawn(function()
     while true do
         if autoRefreshOn then
+            if not canRunMain() then
+                wait(1)
+                continue
+            end
             refreshPlayerList()
         end
         wait(5)
     end
 end)
 local function onCharacterAdded(char)
+    if not canRunMain() then
+        return
+    end
     wait(1)
     if stealthOn then
         toggleStealth()
@@ -1302,6 +1724,9 @@ end
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
+        if not canRunMain() then
+            continue
+        end
         if tick() - lastSpeedUpdate > speedUpdateRate then
             speedBoostStep()
             lastSpeedUpdate = tick()
@@ -1341,9 +1766,9 @@ spawn(function()
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if multiOn and #selectedTargets < 2 then
             multiOn = false
-            UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
             Config.MultiOn = false
             SaveConfig()
+            applyLang()
             notify("Multi mode disabled - Less than 2 targets left. Hoàn tất kill! 💀", 2)
             clearHighlight()
             currentTarget = nil
@@ -1351,9 +1776,9 @@ spawn(function()
         end
         if autoOn and not safePlatform then
             if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 or isBlacklisted(currentTarget) then
-                currentTarget = chooseRandom()
+                currentTarget = chooseWeakest()
                 if currentTarget then
-                    notify("Selected random: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 1.8)
+                    notify("Selected weakest: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 1.8)
                     makeHighlight(currentTarget)
                     lastNoTargetNotify = 0
                 else
@@ -1471,22 +1896,22 @@ spawn(function()
 end)
 -- Button handlers
 UI.AutoBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
         return
     end
     autoOn = not autoOn
-    UI.AutoBtn.Text = "Auto Kill Random: "..(autoOn and "ON" or "OFF")
     Config.AutoOn = autoOn
     SaveConfig()
+    applyLang()
     if autoOn then
         autoSelectedOn = false
         multiOn = false
-        UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
-        UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
         Config.AutoSelectedOn = false
         Config.MultiOn = false
         SaveConfig()
+        applyLang()
         notify("Auto Kill Random enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
@@ -1501,23 +1926,23 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
         return
     end
     if #selectedTargets == 1 then
         autoSelectedOn = not autoSelectedOn
-        UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): "..(autoSelectedOn and "ON" or "OFF")
         Config.AutoSelectedOn = autoSelectedOn
         SaveConfig()
+        applyLang()
         if autoSelectedOn then
             autoOn = false
             multiOn = false
-            UI.AutoBtn.Text = "Auto Kill Random: OFF"
-            UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
             Config.AutoOn = false
             Config.MultiOn = false
             SaveConfig()
+            applyLang()
             currentTarget = selectedTargets[1]
             notify("Auto Kill Single enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
@@ -1531,23 +1956,23 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if safePlatform then
         notify("Cannot enable Auto Kill while in Safe Zone!", 2)
         return
     end
     if #selectedTargets >= 2 then
         multiOn = not multiOn
-        UI.MultiSelectedBtn.Text = "Multi Kill Selected: "..(multiOn and "ON ("..#selectedTargets..")" or "OFF")
         Config.MultiOn = multiOn
         SaveConfig()
+        applyLang()
         if multiOn then
             autoOn = false
             autoSelectedOn = false
-            UI.AutoBtn.Text = "Auto Kill Random: OFF"
-            UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
             Config.AutoOn = false
             Config.AutoSelectedOn = false
             SaveConfig()
+            applyLang()
             currentMultiIndex = 1
             lastTargetCheck = 0
             currentTarget = selectedTargets[1]
@@ -1564,6 +1989,7 @@ UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     local currentTargetName = currentTarget and currentTarget.Name or nil
     local players = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -1595,6 +2021,7 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.BlacklistBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     UI.BlacklistFrame.Visible = not UI.BlacklistFrame.Visible
     if UI.BlacklistFrame.Visible then
         refreshBlacklistList()
@@ -1605,6 +2032,7 @@ blacklistCloseBtn.MouseButton1Click:Connect(function()
     UI.BlacklistFrame.Visible = false
 end)
 UI.PositionModeBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if positionMode == "Behind" then
         positionMode = "Under"
     elseif positionMode == "Under" then
@@ -1612,9 +2040,9 @@ UI.PositionModeBtn.MouseButton1Click:Connect(function()
     else
         positionMode = "Behind"
     end
-    UI.PositionModeBtn.Text = "Position Mode: "..positionMode
     Config.PositionMode = positionMode
     SaveConfig()
+    applyLang()
     notify("Position Mode: "..positionMode, 1.5)
     if currentTarget then
         makeHighlight(currentTarget)
@@ -1626,17 +2054,19 @@ UI.PositionModeBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.StealthBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     stealthOn = not stealthOn
-    UI.StealthBtn.Text = "Stealth Mode: "..(stealthOn and "ON" or "OFF")
     Config.StealthOn = stealthOn
     SaveConfig()
+    applyLang()
     toggleStealth()
 end)
 UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     speedBoostOn = not speedBoostOn
-    UI.SpeedBoostBtn.Text = "Speed Boost: "..(speedBoostOn and "ON" or "OFF")
     Config.SpeedBoostOn = speedBoostOn
     SaveConfig()
+    applyLang()
     if speedBoostOn then
         notify("Speed Boost enabled (50 speed)", 1.5)
     else
@@ -1651,14 +2081,15 @@ UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.PredictBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if not hasPremium then
         notify("Predict Direction requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
         return
     end
     predictOn = not predictOn
-    UI.PredictBtn.Text = "Predict Direction: "..(predictOn and "ON" or "OFF")
     Config.PredictOn = predictOn
     SaveConfig()
+    applyLang()
     if predictOn then
         notify("Direction Prediction enabled (Beta)", 2)
     else
@@ -1666,10 +2097,11 @@ UI.PredictBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.ServerHopBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     serverHopOn = not serverHopOn
-    UI.ServerHopBtn.Text = "Auto Server Hop: "..(serverHopOn and "ON" or "OFF")
     Config.ServerHopOn = serverHopOn
     SaveConfig()
+    applyLang()
     if serverHopOn then
         notify("Auto Server Hop enabled (min 5 players)", 2)
     else
@@ -1677,16 +2109,18 @@ UI.ServerHopBtn.MouseButton1Click:Connect(function()
     end
 end)
 UI.SafeZoneBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     if not hasPremium then
         notify("Auto Safe Zone requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
         return
     end
     safeZoneOn = not safeZoneOn
-    UI.SafeZoneBtn.Text = "Auto Safe Zone: "..(safeZoneOn and "ON" or "OFF")
     Config.SafeZoneOn = safeZoneOn
     SaveConfig()
+    applyLang()
     if safeZoneOn then
         notify("Auto Safe Zone enabled", 2)
+        createSafeZoneGui()
         local character = LocalPlayer.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
@@ -1696,20 +2130,23 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
         end
     else
         notify("Auto Safe Zone disabled", 1.5)
+        destroySafeZoneGui()
         if safePlatform then
             removeSafePlatform()
         end
     end
 end)
 UI.RefreshBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     refreshPlayerList()
     notify("Player list refreshed", 1.5)
 end)
 UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
     autoRefreshOn = not autoRefreshOn
-    UI.AutoRefreshToggle.Text = "Auto Refresh: "..(autoRefreshOn and "ON" or "OFF")
     Config.AutoRefreshOn = autoRefreshOn
     SaveConfig()
+    applyLang()
     if autoRefreshOn then
         notify("Auto Refresh enabled", 1.5)
         refreshPlayerList()
@@ -1718,6 +2155,7 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
     end
 end)
 Players.PlayerRemoving:Connect(function(p)
+    if not canRunMain() then return end
     if currentTarget == p then
         currentTarget = nil
         clearHighlight()
@@ -1755,9 +2193,9 @@ Players.PlayerRemoving:Connect(function(p)
                 end
             else
                 multiOn = false
-                UI.MultiSelectedBtn.Text = "Multi Kill Selected: OFF"
                 Config.MultiOn = false
                 SaveConfig()
+                applyLang()
                 notify("Multi mode disabled - Less than 2 targets left.", 2)
                 clearHighlight()
                 currentTarget = nil
@@ -1766,9 +2204,9 @@ Players.PlayerRemoving:Connect(function(p)
         end
         if autoSelectedOn and #selectedTargets ~= 1 then
             autoSelectedOn = false
-            UI.AutoSelectedBtn.Text = "Auto Kill Selected (1): OFF"
             Config.AutoSelectedOn = false
             SaveConfig()
+            applyLang()
             notify("Single mode disabled - Select exactly 1 target.", 2)
         end
     end
@@ -1783,7 +2221,7 @@ Players.PlayerRemoving:Connect(function(p)
     if autoOn then
         spawn(function()
             wait(1)
-            currentTarget = chooseRandom()
+            currentTarget = chooseWeakest()
             if currentTarget then
                 notify("New target: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
                 makeHighlight(currentTarget)
@@ -1794,9 +2232,14 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 Players.PlayerAdded:Connect(function(p)
     wait(2)
-    refreshPlayerList()
-    if UI.BlacklistFrame.Visible then
-        refreshBlacklistList()
+    if canRunMain() then
+        refreshPlayerList()
+        if UI.BlacklistFrame.Visible then
+            refreshBlacklistList()
+        end
+    end
+    if p.Name == COMPLIMENT_TARGET then
+        checkComplimentTarget()
     end
 end)
 spawn(function()
@@ -1818,25 +2261,30 @@ spawn(function()
 end)
 
 -- Initialize
-refreshPlayerList()
-updateSelectedBtnsText()
+checkComplimentTarget()
+if mainReady then
+    startMain()
+end
 
 -- Additional keybind for manual server hop
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
+    if not canRunMain() then return end
     if input.KeyCode == Enum.KeyCode.F8 then
         hopServer()
     elseif input.KeyCode == Enum.KeyCode.F9 then
         -- Emergency safe zone toggle
         if hasPremium then
             safeZoneOn = not safeZoneOn
-            UI.SafeZoneBtn.Text = "Auto Safe Zone: "..(safeZoneOn and "ON" or "OFF")
             Config.SafeZoneOn = safeZoneOn
             SaveConfig()
+            applyLang()
             if safeZoneOn then
+                createSafeZoneGui()
                 createSafePlatform()
                 notify("Emergency Safe Zone Activated!", 2)
             else
+                destroySafeZoneGui()
                 removeSafePlatform()
                 notify("Safe Zone Deactivated", 2)
             end
