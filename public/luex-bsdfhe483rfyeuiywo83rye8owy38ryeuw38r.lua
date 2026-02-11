@@ -696,7 +696,8 @@ local blackFlash = {
     ws = nil,
     wsConnected = false,
     wsUrl = nil,
-    lastWsConnectTry = 0
+    lastWsConnectTry = 0,
+    followToken = 0
 }
 local removeSafePlatform
 local complimentDialog = nil
@@ -971,6 +972,7 @@ local function resetBlackFlashState(reason)
     blackFlash.localReady = false
     blackFlash.partnerReady = false
     blackFlash.running = false
+    blackFlash.followToken = blackFlash.followToken + 1
     UI.BlackFlashAcceptBtn.Visible = false
     UI.BlackFlashRejectBtn.Visible = false
     UI.BlackFlashStartBtn.Visible = false
@@ -1050,9 +1052,27 @@ local function placeFront(targetPlayer)
     local frontPos = targetRoot.Position + (targetRoot.CFrame.LookVector * 3.3)
     localRoot.CFrame = CFrame.lookAt(frontPos, targetRoot.Position)
 end
+local function startBlackFlashFollowLoop(followMode)
+    blackFlash.followToken = blackFlash.followToken + 1
+    local token = blackFlash.followToken
+    spawn(function()
+        while blackFlash.running and token == blackFlash.followToken do
+            local partner = getPlayerByName(blackFlash.partnerName)
+            if partner and isPlayerAlive(partner) then
+                if followMode == "behind" then
+                    placeBehind(partner)
+                else
+                    placeFront(partner)
+                end
+            end
+            RunService.Heartbeat:Wait()
+        end
+    end)
+end
 local function runSenderBlackFlashLoop()
     if blackFlash.running then return end
     blackFlash.running = true
+    startBlackFlashFollowLoop("behind")
     setAutoCombatOffForBlackFlash()
     notify("BlackFlash Sender loop started", 1.5)
     spawn(function()
@@ -1089,6 +1109,7 @@ end
 local function runReceiverBlackFlashLoop()
     if blackFlash.running then return end
     blackFlash.running = true
+    startBlackFlashFollowLoop("front")
     notify("BlackFlash Receiver loop started", 1.5)
     spawn(function()
         while blackFlash.running do
@@ -1265,15 +1286,22 @@ local function connectBlackFlashWebSocket(force)
     })
     return true
 end
-local function sendBlackFlashInvite(targetName)
-    targetName = trimText(targetName)
-    if targetName == "" then
-        notify("Nhap ten player can moi", 2)
+local function sendBlackFlashInvite()
+    if #selectedTargets < 1 then
+        notify("Hay chon target ben phai truoc khi Send", 2)
         return
     end
-    local targetPlayer = getPlayerByName(targetName)
+    local targetPlayer = selectedTargets[1]
     if not targetPlayer or targetPlayer == LocalPlayer then
-        notify("Khong tim thay player hop le", 2)
+        notify("Target duoc chon khong hop le", 2)
+        return
+    end
+    if not table.find(Players:GetPlayers(), targetPlayer) then
+        notify("Target da roi server", 2)
+        return
+    end
+    if isBlacklisted(targetPlayer) then
+        notify("Target dang nam trong blacklist", 2)
         return
     end
     connectBlackFlashWebSocket(false)
@@ -1994,12 +2022,10 @@ local function spamAttack()
         }
     }
     remote:FireServer(unpack(args))
-    for i = 1, 3 do
-        remote:FireServer({
-            Goal = "LeftClick",
-            Mobile = true
-        })
-    end
+    remote:FireServer({
+        Goal = "LeftClick",
+        Mobile = true
+    })
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, toolName in ipairs(toolList) do
@@ -2845,7 +2871,9 @@ UI.BlackFlashBtn.MouseButton1Click:Connect(function()
     if UI.BlackFlashFrame.Visible then
         connectBlackFlashWebSocket(false)
         syncBlackFlashUiState()
-        if blackFlash.partnerName then
+        if #selectedTargets >= 1 and selectedTargets[1] then
+            UI.BlackFlashTargetBox.Text = selectedTargets[1].Name
+        elseif blackFlash.partnerName then
             UI.BlackFlashTargetBox.Text = blackFlash.partnerName
         end
     end
@@ -2855,7 +2883,7 @@ UI.BlackFlashCloseBtn.MouseButton1Click:Connect(function()
 end)
 UI.BlackFlashSendBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
-    sendBlackFlashInvite(UI.BlackFlashTargetBox.Text)
+    sendBlackFlashInvite()
 end)
 UI.BlackFlashReadyReceiveBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
