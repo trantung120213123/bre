@@ -521,8 +521,8 @@ blackFlashRejectBtn.TextSize = 14
 blackFlashRejectBtn.TextColor3 = Color3.fromRGB(240,240,240)
 blackFlashRejectBtn.Visible = false
 local blackFlashStartBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashStartBtn.Size = UDim2.new(1, -20, 0, 36)
-blackFlashStartBtn.Position = UDim2.new(0, 10, 0, 140)
+blackFlashStartBtn.Size = UDim2.new(0.48, -5, 0, 36)
+blackFlashStartBtn.Position = UDim2.new(0.52, -5, 0, 140)
 blackFlashStartBtn.BackgroundColor3 = Color3.fromRGB(160, 25, 25)
 blackFlashStartBtn.BorderSizePixel = 0
 blackFlashStartBtn.Text = "Start BlackFlash"
@@ -530,6 +530,15 @@ blackFlashStartBtn.Font = Enum.Font.GothamBold
 blackFlashStartBtn.TextSize = 15
 blackFlashStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
 blackFlashStartBtn.Visible = false
+local blackFlashReadyReceiveBtn = Instance.new("TextButton", blackFlashFrame)
+blackFlashReadyReceiveBtn.Size = UDim2.new(0.48, -5, 0, 36)
+blackFlashReadyReceiveBtn.Position = UDim2.new(0, 10, 0, 140)
+blackFlashReadyReceiveBtn.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+blackFlashReadyReceiveBtn.BorderSizePixel = 0
+blackFlashReadyReceiveBtn.Text = "Ready Receive: OFF"
+blackFlashReadyReceiveBtn.Font = Enum.Font.GothamBold
+blackFlashReadyReceiveBtn.TextSize = 14
+blackFlashReadyReceiveBtn.TextColor3 = Color3.fromRGB(240,240,240)
 local blackFlashStatus = Instance.new("TextLabel", blackFlashFrame)
 blackFlashStatus.Size = UDim2.new(1, -20, 0, 54)
 blackFlashStatus.Position = UDim2.new(0, 10, 0, 182)
@@ -569,6 +578,7 @@ getgenv().LuexUI = {
     BlackFlashAcceptBtn = blackFlashAcceptBtn,
     BlackFlashRejectBtn = blackFlashRejectBtn,
     BlackFlashStartBtn = blackFlashStartBtn,
+    BlackFlashReadyReceiveBtn = blackFlashReadyReceiveBtn,
     BlackFlashStatus = blackFlashStatus,
     BlackFlashCloseBtn = blackFlashCloseBtn,
     Glow = glowFrame,
@@ -672,13 +682,13 @@ local wasAutoKillOn = false
 local safeZoneGui = nil
 local safeZoneNowBtn = nil
 local blackFlashApiBase = "https://serverluexreal.onrender.com"
-local blackFlashPollRate = 1.0
 local blackFlash = {
     inviteId = nil,
     mode = nil,
     partnerName = nil,
     incomingFrom = nil,
     incomingInviteId = nil,
+    receiveReady = false,
     localReady = false,
     partnerReady = false,
     running = false,
@@ -905,6 +915,24 @@ local function setBlackFlashStatus(text)
         UI.BlackFlashStatus.Text = "Status: " .. text
     end
 end
+local function updateReadyReceiveButton()
+    if not UI.BlackFlashReadyReceiveBtn then return end
+    local isOn = blackFlash.receiveReady
+    UI.BlackFlashReadyReceiveBtn.Text = "Ready Receive: " .. (isOn and "ON" or "OFF")
+    UI.BlackFlashReadyReceiveBtn.BackgroundColor3 = isOn and Color3.fromRGB(20, 70, 20) or Color3.fromRGB(35, 6, 6)
+end
+local function getBlackFlashPollInterval()
+    if blackFlash.receiveReady then
+        return 0.01
+    end
+    if blackFlash.incomingInviteId then
+        return 0.01
+    end
+    if blackFlash.inviteId and not blackFlash.running then
+        return 0.01
+    end
+    return 0.25
+end
 local function resetBlackFlashState(reason)
     blackFlash.inviteId = nil
     blackFlash.mode = nil
@@ -917,6 +945,7 @@ local function resetBlackFlashState(reason)
     UI.BlackFlashAcceptBtn.Visible = false
     UI.BlackFlashRejectBtn.Visible = false
     UI.BlackFlashStartBtn.Visible = false
+    updateReadyReceiveButton()
     if reason and reason ~= "" then
         setBlackFlashStatus(reason)
     else
@@ -1052,6 +1081,7 @@ local function syncBlackFlashUiState()
     UI.BlackFlashAcceptBtn.Visible = hasIncoming
     UI.BlackFlashRejectBtn.Visible = hasIncoming
     UI.BlackFlashStartBtn.Visible = blackFlash.inviteId ~= nil and blackFlash.mode ~= nil
+    updateReadyReceiveButton()
 end
 local function sendBlackFlashInvite(targetName)
     targetName = trimText(targetName)
@@ -1105,7 +1135,8 @@ local function respondBlackFlashInvite(accepted)
         blackFlash.partnerName = blackFlash.incomingFrom
         blackFlash.localReady = false
         blackFlash.partnerReady = false
-        setBlackFlashStatus("Accepted invite from " .. tostring(blackFlash.partnerName))
+        blackFlash.lastPoll = 0
+        setBlackFlashStatus("Accepted invite. Waiting partner press Start...")
         notify("Da dong y loi moi BlackFlash", 2)
     else
         setBlackFlashStatus("Invite rejected")
@@ -1132,11 +1163,12 @@ local function setBlackFlashReady()
         return
     end
     blackFlash.localReady = true
+    blackFlash.lastPoll = 0
     setBlackFlashStatus("You are ready. Waiting partner...")
     notify("Da Start. Dang doi doi tac...", 2)
 end
 local function pollBlackFlashState()
-    if tick() - blackFlash.lastPoll < blackFlashPollRate then return end
+    if tick() - blackFlash.lastPoll < getBlackFlashPollInterval() then return end
     blackFlash.lastPoll = tick()
     local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/poll", {
         player = LocalPlayer.Name,
@@ -1149,7 +1181,7 @@ local function pollBlackFlashState()
     local payload = data and (data.data or data) or {}
     local incoming = payload.incomingInvite or payload.incoming or nil
     local session = payload.session or nil
-    if incoming and incoming.inviteId and not blackFlash.inviteId then
+    if incoming and incoming.inviteId and not blackFlash.inviteId and blackFlash.receiveReady then
         blackFlash.incomingInviteId = incoming.inviteId
         blackFlash.incomingFrom = incoming.sender
         setBlackFlashStatus("Incoming invite from " .. tostring(incoming.sender))
@@ -1157,7 +1189,7 @@ local function pollBlackFlashState()
     end
     if session and session.inviteId and blackFlash.inviteId and session.inviteId == blackFlash.inviteId then
         blackFlash.partnerReady = session.partnerReady and true or false
-        local remoteAccepted = session.accepted == true or session.status == "accepted"
+        local remoteAccepted = session.accepted == true or session.status == "accepted" or session.status == "started"
         if not remoteAccepted then
             return
         end
@@ -1896,6 +1928,7 @@ startMain = function()
     loadLang()
     applyLang()
     syncBlackFlashUiState()
+    updateReadyReceiveButton()
     if not blackFlash.partnerName then
         setBlackFlashStatus("Idle")
     end
@@ -2147,7 +2180,7 @@ spawn(function()
         pcall(function()
             pollBlackFlashState()
         end)
-        task.wait(0.25)
+        task.wait(0.01)
     end
 end)
 local function onCharacterAdded(char)
@@ -2601,6 +2634,21 @@ end)
 UI.BlackFlashSendBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
     sendBlackFlashInvite(UI.BlackFlashTargetBox.Text)
+end)
+UI.BlackFlashReadyReceiveBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    blackFlash.receiveReady = not blackFlash.receiveReady
+    updateReadyReceiveButton()
+    blackFlash.lastPoll = 0
+    if blackFlash.receiveReady then
+        setBlackFlashStatus("Ready to receive invite (checking every 0.01s)")
+        notify("Ready Receive ON", 1.5)
+    else
+        if not blackFlash.inviteId and not blackFlash.incomingInviteId then
+            setBlackFlashStatus("Idle")
+        end
+        notify("Ready Receive OFF", 1.5)
+    end
 end)
 UI.BlackFlashAcceptBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
