@@ -6,8 +6,6 @@ local Stats = game:GetService("Stats")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
-local PREMIUM_KEY = "1"
-local hasPremium = getgenv().LuexKey == PREMIUM_KEY
 local PROTECTED_USER = "tung1202222222"
 local Config = {
     AutoOn = false,
@@ -269,7 +267,7 @@ btnPredict.Size = UDim2.new(1, 0, 0, 36)
 btnPredict.Position = UDim2.new(0, 0, 0, 320)
 btnPredict.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPredict.BorderSizePixel = 0
-btnPredict.Text = hasPremium and "Predict Direction: "..(Config.PredictOn and "ON" or "OFF") or "Predict Direction: PREMIUM"
+btnPredict.Text = "Predict Direction: "..(Config.PredictOn and "ON" or "OFF")
 btnPredict.Font = Enum.Font.GothamBold
 btnPredict.TextSize = 14
 btnPredict.TextColor3 = Color3.fromRGB(240,240,240)
@@ -297,7 +295,7 @@ btnSafeZone.Size = UDim2.new(1, 0, 0, 36)
 btnSafeZone.Position = UDim2.new(0, 0, 0, 400)
 btnSafeZone.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSafeZone.BorderSizePixel = 0
-btnSafeZone.Text = hasPremium and "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF") or "Auto Safe Zone: PREMIUM"
+btnSafeZone.Text = "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF")
 btnSafeZone.Font = Enum.Font.GothamBold
 btnSafeZone.TextSize = 14
 btnSafeZone.TextColor3 = Color3.fromRGB(240,240,240)
@@ -306,6 +304,20 @@ local stroke6 = Instance.new("UIStroke", btnSafeZone)
 stroke6.Color = Color3.fromRGB(200,20,20)
 stroke6.Transparency = 0.85
 stroke6.Thickness = 1.5
+local btnBlackFlash = Instance.new("TextButton", leftColumn)
+btnBlackFlash.Size = UDim2.new(1, 0, 0, 36)
+btnBlackFlash.Position = UDim2.new(0, 0, 0, 440)
+btnBlackFlash.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnBlackFlash.BorderSizePixel = 0
+btnBlackFlash.Text = "BlackFlash 2P"
+btnBlackFlash.Font = Enum.Font.GothamBold
+btnBlackFlash.TextSize = 14
+btnBlackFlash.TextColor3 = Color3.fromRGB(240,240,240)
+btnBlackFlash.AutoButtonColor = false
+local strokeBlackFlash = Instance.new("UIStroke", btnBlackFlash)
+strokeBlackFlash.Color = Color3.fromRGB(200,20,20)
+strokeBlackFlash.Transparency = 0.85
+strokeBlackFlash.Thickness = 1.5
 local hint = Instance.new("TextLabel", content)
 hint.Size = UDim2.new(0.48,0,0,24)
 hint.Position = UDim2.new(0,0,1,-24)
@@ -431,6 +443,104 @@ blacklistPlayerList.BorderSizePixel = 0
 blacklistPlayerList.ScrollBarThickness = 6
 blacklistPlayerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 blacklistPlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+local blackFlashFrame = Instance.new("Frame")
+blackFlashFrame.Name = "BlackFlashFrame"
+blackFlashFrame.Size = UDim2.new(0, 420, 0, 240)
+blackFlashFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+blackFlashFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+blackFlashFrame.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+blackFlashFrame.BackgroundTransparency = 0.1
+blackFlashFrame.BorderSizePixel = 0
+blackFlashFrame.Visible = false
+blackFlashFrame.ZIndex = 20
+blackFlashFrame.Parent = screen
+local blackFlashBorder = Instance.new("UIStroke", blackFlashFrame)
+blackFlashBorder.Color = Color3.fromRGB(255, 30, 30)
+blackFlashBorder.Thickness = 3
+blackFlashBorder.Transparency = 0.3
+local blackFlashTopBar = Instance.new("Frame", blackFlashFrame)
+blackFlashTopBar.Size = UDim2.new(1, 0, 0, 40)
+blackFlashTopBar.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
+blackFlashTopBar.BorderSizePixel = 0
+local blackFlashTitle = Instance.new("TextLabel", blackFlashTopBar)
+blackFlashTitle.Size = UDim2.new(1, -80, 1, 0)
+blackFlashTitle.Position = UDim2.new(0, 10, 0, 0)
+blackFlashTitle.BackgroundTransparency = 1
+blackFlashTitle.Text = "BLACKFLASH 2P"
+blackFlashTitle.Font = Enum.Font.GothamBlack
+blackFlashTitle.TextSize = 18
+blackFlashTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+blackFlashTitle.TextXAlignment = Enum.TextXAlignment.Left
+local blackFlashCloseBtn = Instance.new("TextButton", blackFlashTopBar)
+blackFlashCloseBtn.Size = UDim2.new(0, 60, 0, 30)
+blackFlashCloseBtn.Position = UDim2.new(1, -70, 0, 5)
+blackFlashCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+blackFlashCloseBtn.BorderSizePixel = 0
+blackFlashCloseBtn.Text = "X"
+blackFlashCloseBtn.Font = Enum.Font.GothamBold
+blackFlashCloseBtn.TextSize = 20
+blackFlashCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+local blackFlashTargetBox = Instance.new("TextBox", blackFlashFrame)
+blackFlashTargetBox.Size = UDim2.new(1, -20, 0, 36)
+blackFlashTargetBox.Position = UDim2.new(0, 10, 0, 55)
+blackFlashTargetBox.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+blackFlashTargetBox.BorderSizePixel = 0
+blackFlashTargetBox.Text = ""
+blackFlashTargetBox.PlaceholderText = "Nhap ten player can moi..."
+blackFlashTargetBox.Font = Enum.Font.Gotham
+blackFlashTargetBox.TextSize = 14
+blackFlashTargetBox.TextColor3 = Color3.fromRGB(255, 220, 220)
+blackFlashTargetBox.PlaceholderColor3 = Color3.fromRGB(180, 120, 120)
+local blackFlashSendBtn = Instance.new("TextButton", blackFlashFrame)
+blackFlashSendBtn.Size = UDim2.new(0.48, -5, 0, 34)
+blackFlashSendBtn.Position = UDim2.new(0, 10, 0, 98)
+blackFlashSendBtn.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+blackFlashSendBtn.BorderSizePixel = 0
+blackFlashSendBtn.Text = "Send Invite"
+blackFlashSendBtn.Font = Enum.Font.GothamBold
+blackFlashSendBtn.TextSize = 14
+blackFlashSendBtn.TextColor3 = Color3.fromRGB(240,240,240)
+local blackFlashAcceptBtn = Instance.new("TextButton", blackFlashFrame)
+blackFlashAcceptBtn.Size = UDim2.new(0.26, -4, 0, 34)
+blackFlashAcceptBtn.Position = UDim2.new(0.48, 7, 0, 98)
+blackFlashAcceptBtn.BackgroundColor3 = Color3.fromRGB(20, 70, 20)
+blackFlashAcceptBtn.BorderSizePixel = 0
+blackFlashAcceptBtn.Text = "Accept"
+blackFlashAcceptBtn.Font = Enum.Font.GothamBold
+blackFlashAcceptBtn.TextSize = 14
+blackFlashAcceptBtn.TextColor3 = Color3.fromRGB(240,240,240)
+blackFlashAcceptBtn.Visible = false
+local blackFlashRejectBtn = Instance.new("TextButton", blackFlashFrame)
+blackFlashRejectBtn.Size = UDim2.new(0.26, -4, 0, 34)
+blackFlashRejectBtn.Position = UDim2.new(0.74, 8, 0, 98)
+blackFlashRejectBtn.BackgroundColor3 = Color3.fromRGB(90, 20, 20)
+blackFlashRejectBtn.BorderSizePixel = 0
+blackFlashRejectBtn.Text = "Reject"
+blackFlashRejectBtn.Font = Enum.Font.GothamBold
+blackFlashRejectBtn.TextSize = 14
+blackFlashRejectBtn.TextColor3 = Color3.fromRGB(240,240,240)
+blackFlashRejectBtn.Visible = false
+local blackFlashStartBtn = Instance.new("TextButton", blackFlashFrame)
+blackFlashStartBtn.Size = UDim2.new(1, -20, 0, 36)
+blackFlashStartBtn.Position = UDim2.new(0, 10, 0, 140)
+blackFlashStartBtn.BackgroundColor3 = Color3.fromRGB(160, 25, 25)
+blackFlashStartBtn.BorderSizePixel = 0
+blackFlashStartBtn.Text = "Start BlackFlash"
+blackFlashStartBtn.Font = Enum.Font.GothamBold
+blackFlashStartBtn.TextSize = 15
+blackFlashStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
+blackFlashStartBtn.Visible = false
+local blackFlashStatus = Instance.new("TextLabel", blackFlashFrame)
+blackFlashStatus.Size = UDim2.new(1, -20, 0, 54)
+blackFlashStatus.Position = UDim2.new(0, 10, 0, 182)
+blackFlashStatus.BackgroundTransparency = 1
+blackFlashStatus.Text = "Status: Idle"
+blackFlashStatus.Font = Enum.Font.Gotham
+blackFlashStatus.TextSize = 13
+blackFlashStatus.TextColor3 = Color3.fromRGB(255, 205, 205)
+blackFlashStatus.TextWrapped = true
+blackFlashStatus.TextYAlignment = Enum.TextYAlignment.Top
+blackFlashStatus.TextXAlignment = Enum.TextXAlignment.Left
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
@@ -447,11 +557,20 @@ getgenv().LuexUI = {
     PredictBtn = btnPredict,
     ServerHopBtn = btnServerHop,
     SafeZoneBtn = btnSafeZone,
+    BlackFlashBtn = btnBlackFlash,
     PlayerList = playerListContainer,
     RefreshBtn = refreshBtn,
     AutoRefreshToggle = autoRefreshToggle,
     BlacklistFrame = blacklistFrame,
     BlacklistPlayerList = blacklistPlayerList,
+    BlackFlashFrame = blackFlashFrame,
+    BlackFlashTargetBox = blackFlashTargetBox,
+    BlackFlashSendBtn = blackFlashSendBtn,
+    BlackFlashAcceptBtn = blackFlashAcceptBtn,
+    BlackFlashRejectBtn = blackFlashRejectBtn,
+    BlackFlashStartBtn = blackFlashStartBtn,
+    BlackFlashStatus = blackFlashStatus,
+    BlackFlashCloseBtn = blackFlashCloseBtn,
     Glow = glowFrame,
     Crack = crackContainer
 }
@@ -552,6 +671,19 @@ local safePlatform = nil
 local wasAutoKillOn = false
 local safeZoneGui = nil
 local safeZoneNowBtn = nil
+local blackFlashApiBase = "https://serverluexreal.onrender.com"
+local blackFlashPollRate = 1.0
+local blackFlash = {
+    inviteId = nil,
+    mode = nil,
+    partnerName = nil,
+    incomingFrom = nil,
+    incomingInviteId = nil,
+    localReady = false,
+    partnerReady = false,
+    running = false,
+    lastPoll = 0
+}
 local removeSafePlatform
 local complimentDialog = nil
 local complimentVisible = false
@@ -723,6 +855,321 @@ local function notify(text, sec)
         end
         frame:Destroy()
     end)
+end
+local function trimText(value)
+    if type(value) ~= "string" then return "" end
+    return (value:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+local function getRequestFn()
+    if syn and syn.request then return syn.request end
+    if http_request then return http_request end
+    if request then return request end
+    return nil
+end
+local function getCharacterRemote()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    return character:FindFirstChild("Communicate")
+end
+local function callBlackFlashApi(method, path, payload)
+    local req = getRequestFn()
+    if not req then
+        return false, nil, nil, "request api not found"
+    end
+    local body = payload and HttpService:JSONEncode(payload) or nil
+    local ok, response = pcall(function()
+        return req({
+            Url = blackFlashApiBase .. path,
+            Method = method,
+            Headers = {["Content-Type"] = "application/json"},
+            Body = body
+        })
+    end)
+    if not ok or not response then
+        return false, nil, nil, "request failed"
+    end
+    local status = tonumber(response.StatusCode) or 0
+    local decoded = nil
+    if response.Body and response.Body ~= "" then
+        pcall(function()
+            decoded = HttpService:JSONDecode(response.Body)
+        end)
+    end
+    if status < 200 or status >= 300 then
+        return false, status, decoded, response.Body
+    end
+    return true, status, decoded, response.Body
+end
+local function setBlackFlashStatus(text)
+    if UI.BlackFlashStatus then
+        UI.BlackFlashStatus.Text = "Status: " .. text
+    end
+end
+local function resetBlackFlashState(reason)
+    blackFlash.inviteId = nil
+    blackFlash.mode = nil
+    blackFlash.partnerName = nil
+    blackFlash.incomingFrom = nil
+    blackFlash.incomingInviteId = nil
+    blackFlash.localReady = false
+    blackFlash.partnerReady = false
+    blackFlash.running = false
+    UI.BlackFlashAcceptBtn.Visible = false
+    UI.BlackFlashRejectBtn.Visible = false
+    UI.BlackFlashStartBtn.Visible = false
+    if reason and reason ~= "" then
+        setBlackFlashStatus(reason)
+    else
+        setBlackFlashStatus("Idle")
+    end
+end
+local function setAutoCombatOffForBlackFlash()
+    autoOn = false
+    autoSelectedOn = false
+    multiOn = false
+    Config.AutoOn = false
+    Config.AutoSelectedOn = false
+    Config.MultiOn = false
+    SaveConfig()
+    applyLang()
+end
+local function pressLeftClickOnce()
+    local remote = getCharacterRemote()
+    if not remote then return false end
+    remote:FireServer({
+        Goal = "LeftClick",
+        Mobile = true
+    })
+    return true
+end
+local function holdFFor(duration)
+    local remote = getCharacterRemote()
+    if not remote then return false end
+    remote:FireServer({
+        Goal = "KeyPress",
+        Key = Enum.KeyCode.F
+    })
+    task.wait(duration or 0.2)
+    local args = {
+        {
+            Goal = "KeyRelease",
+            Key = Enum.KeyCode.F
+        }
+    }
+    remote:FireServer(unpack(args))
+    return true
+end
+local function getPlayerByName(playerName)
+    if not playerName or playerName == "" then return nil end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Name == playerName then
+            return player
+        end
+    end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if string.lower(player.Name):find(string.lower(playerName), 1, true) then
+            return player
+        end
+    end
+    return nil
+end
+local function isPlayerAlive(player)
+    if not player or not player.Character then return false end
+    local humanoid = player.Character:FindFirstChild("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+local function placeBehind(targetPlayer)
+    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not localRoot or not targetRoot then return end
+    local behindPos = targetRoot.Position - (targetRoot.CFrame.LookVector * 3.3)
+    localRoot.CFrame = CFrame.lookAt(behindPos, targetRoot.Position)
+end
+local function placeFront(targetPlayer)
+    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not localRoot or not targetRoot then return end
+    local frontPos = targetRoot.Position + (targetRoot.CFrame.LookVector * 3.3)
+    localRoot.CFrame = CFrame.lookAt(frontPos, targetRoot.Position)
+end
+local function runSenderBlackFlashLoop()
+    if blackFlash.running then return end
+    blackFlash.running = true
+    setAutoCombatOffForBlackFlash()
+    notify("BlackFlash Sender loop started", 1.5)
+    spawn(function()
+        while blackFlash.running do
+            local partner = getPlayerByName(blackFlash.partnerName)
+            if not partner or not isPlayerAlive(partner) then
+                blackFlash.running = false
+                resetBlackFlashState("Target dead or left server")
+                notify("BlackFlash stopped: target invalid/dead", 2)
+                callBlackFlashApi("POST", "/api/blackflash/end", {
+                    inviteId = blackFlash.inviteId,
+                    player = LocalPlayer.Name,
+                    serverId = game.JobId
+                })
+                break
+            end
+            placeBehind(partner)
+            task.wait(0.3)
+            pressLeftClickOnce()
+            task.wait(0.05)
+            holdFFor(0.2)
+            task.wait(0.45)
+        end
+    end)
+end
+local function runReceiverBlackFlashLoop()
+    if blackFlash.running then return end
+    blackFlash.running = true
+    notify("BlackFlash Receiver loop started", 1.5)
+    spawn(function()
+        while blackFlash.running do
+            local partner = getPlayerByName(blackFlash.partnerName)
+            if not partner or not isPlayerAlive(partner) then
+                blackFlash.running = false
+                resetBlackFlashState("Partner dead or left server")
+                notify("BlackFlash stopped: partner invalid/dead", 2)
+                callBlackFlashApi("POST", "/api/blackflash/end", {
+                    inviteId = blackFlash.inviteId,
+                    player = LocalPlayer.Name,
+                    serverId = game.JobId
+                })
+                break
+            end
+            placeFront(partner)
+            task.wait(0.35)
+            holdFFor(0.2)
+            task.wait(0.25)
+            pressLeftClickOnce()
+            task.wait(0.4)
+        end
+    end)
+end
+local function syncBlackFlashUiState()
+    local hasIncoming = blackFlash.incomingInviteId ~= nil
+    UI.BlackFlashAcceptBtn.Visible = hasIncoming
+    UI.BlackFlashRejectBtn.Visible = hasIncoming
+    UI.BlackFlashStartBtn.Visible = blackFlash.inviteId ~= nil and blackFlash.mode ~= nil
+end
+local function sendBlackFlashInvite(targetName)
+    targetName = trimText(targetName)
+    if targetName == "" then
+        notify("Nhap ten player can moi", 2)
+        return
+    end
+    local targetPlayer = getPlayerByName(targetName)
+    if not targetPlayer or targetPlayer == LocalPlayer then
+        notify("Khong tim thay player hop le", 2)
+        return
+    end
+    local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/invite", {
+        sender = LocalPlayer.Name,
+        receiver = targetPlayer.Name,
+        serverId = game.JobId,
+        placeId = game.PlaceId
+    })
+    if not ok then
+        notify("Gui loi moi that bai (kiem tra api)", 2.5)
+        return
+    end
+    local payload = data and (data.data or data) or {}
+    blackFlash.inviteId = payload.inviteId or payload.id
+    blackFlash.mode = "sender"
+    blackFlash.partnerName = targetPlayer.Name
+    blackFlash.localReady = false
+    blackFlash.partnerReady = false
+    syncBlackFlashUiState()
+    setBlackFlashStatus("Invite sent to " .. targetPlayer.Name)
+    notify("Da gui loi moi BlackFlash den " .. targetPlayer.Name, 2)
+end
+local function respondBlackFlashInvite(accepted)
+    if not blackFlash.incomingInviteId then
+        notify("Khong co loi moi nao", 2)
+        return
+    end
+    local ok = callBlackFlashApi("POST", "/api/blackflash/respond", {
+        inviteId = blackFlash.incomingInviteId,
+        player = LocalPlayer.Name,
+        accepted = accepted and true or false,
+        serverId = game.JobId
+    })
+    if not ok then
+        notify("Phan hoi loi moi that bai", 2)
+        return
+    end
+    if accepted then
+        blackFlash.inviteId = blackFlash.incomingInviteId
+        blackFlash.mode = "receiver"
+        blackFlash.partnerName = blackFlash.incomingFrom
+        blackFlash.localReady = false
+        blackFlash.partnerReady = false
+        setBlackFlashStatus("Accepted invite from " .. tostring(blackFlash.partnerName))
+        notify("Da dong y loi moi BlackFlash", 2)
+    else
+        setBlackFlashStatus("Invite rejected")
+        notify("Da tu choi loi moi", 1.5)
+    end
+    blackFlash.incomingInviteId = nil
+    blackFlash.incomingFrom = nil
+    syncBlackFlashUiState()
+end
+local function setBlackFlashReady()
+    if not blackFlash.inviteId or not blackFlash.mode then
+        notify("Chua co room BlackFlash", 2)
+        return
+    end
+    local ok = callBlackFlashApi("POST", "/api/blackflash/start", {
+        inviteId = blackFlash.inviteId,
+        player = LocalPlayer.Name,
+        role = blackFlash.mode,
+        ready = true,
+        serverId = game.JobId
+    })
+    if not ok then
+        notify("Start that bai (api)", 2)
+        return
+    end
+    blackFlash.localReady = true
+    setBlackFlashStatus("You are ready. Waiting partner...")
+    notify("Da Start. Dang doi doi tac...", 2)
+end
+local function pollBlackFlashState()
+    if tick() - blackFlash.lastPoll < blackFlashPollRate then return end
+    blackFlash.lastPoll = tick()
+    local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/poll", {
+        player = LocalPlayer.Name,
+        serverId = game.JobId,
+        placeId = game.PlaceId
+    })
+    if not ok then
+        return
+    end
+    local payload = data and (data.data or data) or {}
+    local incoming = payload.incomingInvite or payload.incoming or nil
+    local session = payload.session or nil
+    if incoming and incoming.inviteId and not blackFlash.inviteId then
+        blackFlash.incomingInviteId = incoming.inviteId
+        blackFlash.incomingFrom = incoming.sender
+        setBlackFlashStatus("Incoming invite from " .. tostring(incoming.sender))
+        syncBlackFlashUiState()
+    end
+    if session and session.inviteId and blackFlash.inviteId and session.inviteId == blackFlash.inviteId then
+        blackFlash.partnerReady = session.partnerReady and true or false
+        local remoteAccepted = session.accepted == true or session.status == "accepted"
+        if not remoteAccepted then
+            return
+        end
+        if blackFlash.localReady and blackFlash.partnerReady and not blackFlash.running then
+            setBlackFlashStatus("Both ready. Running combo...")
+            if blackFlash.mode == "sender" then
+                runSenderBlackFlashLoop()
+            elseif blackFlash.mode == "receiver" then
+                runReceiverBlackFlashLoop()
+            end
+        end
+    end
 end
 local function isSelected(player)
     for _, p in ipairs(selectedTargets) do
@@ -927,10 +1374,9 @@ local LANG_TEXT = {
         stealth = "Stealth Mode: ",
         speed = "Speed Boost: ",
         predict = "Predict Direction: ",
-        predictPrem = "Predict Direction: PREMIUM",
         hop = "Auto Server Hop: ",
         safe = "Auto Safe Zone: ",
-        safePrem = "Auto Safe Zone: PREMIUM",
+        blackflash = "BlackFlash 2P",
         safeNow = "SAFEZONE NOW",
         refresh = "🔄 Refresh Players",
         autoRefresh = "Auto Refresh: ",
@@ -949,10 +1395,9 @@ local LANG_TEXT = {
         stealth = "Tàng Hình: ",
         speed = "Tăng Tốc: ",
         predict = "Dự Đoán Hướng: ",
-        predictPrem = "Dự Đoán Hướng: PREMIUM",
         hop = "Auto Đổi Server: ",
         safe = "Auto Safe Zone: ",
-        safePrem = "Auto Safe Zone: PREMIUM",
+        blackflash = "BlackFlash 2P",
         safeNow = "SAFEZONE NGAY",
         refresh = "🔄 Làm Mới DS",
         autoRefresh = "Tự Động Làm Mới: ",
@@ -1075,7 +1520,7 @@ local function buildComplimentDialog()
     label.Size = UDim2.new(1, -20, 0, 90)
     label.Position = UDim2.new(0, 10, 0, 15)
     label.BackgroundTransparency = 1
-    label.Text = "bạn là 1 con dog đen xì xì chỉ \nliếm chân chó vàng đẹp trai phải không đồ đen xì"
+    label.Text = "bạn là 1 đẹp trai"
     label.TextColor3 = Color3.fromRGB(255, 220, 220)
     label.Font = Enum.Font.GothamBold
     label.TextSize = 16
@@ -1170,9 +1615,10 @@ applyLang = function()
     btnPositionMode.Text = t.pos .. positionMode
     btnStealth.Text = t.stealth .. (stealthOn and "ON" or "OFF")
     btnSpeedBoost.Text = t.speed .. (speedBoostOn and "ON" or "OFF")
-    btnPredict.Text = hasPremium and (t.predict .. (predictOn and "ON" or "OFF")) or t.predictPrem
+    btnPredict.Text = t.predict .. (predictOn and "ON" or "OFF")
     btnServerHop.Text = t.hop .. (serverHopOn and "ON" or "OFF")
-    btnSafeZone.Text = hasPremium and (t.safe .. (safeZoneOn and "ON" or "OFF")) or t.safePrem
+    btnSafeZone.Text = t.safe .. (safeZoneOn and "ON" or "OFF")
+    btnBlackFlash.Text = t.blackflash
     refreshBtn.Text = t.refresh
     autoRefreshToggle.Text = t.autoRefresh .. (autoRefreshOn and "ON" or "OFF")
     playerTitle.Text = t.playerTitle
@@ -1318,7 +1764,6 @@ local function spamAttack()
 end
 -- Continue with remaining functions...
 local function createSafePlatform()
-    if not hasPremium then return end
     if safePlatform then return end
     local character = LocalPlayer.Character
     if not character then return end
@@ -1450,9 +1895,13 @@ startMain = function()
     mainStarted = true
     loadLang()
     applyLang()
+    syncBlackFlashUiState()
+    if not blackFlash.partnerName then
+        setBlackFlashStatus("Idle")
+    end
     refreshPlayerList()
     updateSelectedBtnsText()
-    if safeZoneOn and hasPremium then
+    if safeZoneOn then
         createSafeZoneGui()
     end
     if content then
@@ -1693,6 +2142,14 @@ spawn(function()
         wait(5)
     end
 end)
+spawn(function()
+    while true do
+        pcall(function()
+            pollBlackFlashState()
+        end)
+        task.wait(0.25)
+    end
+end)
 local function onCharacterAdded(char)
     if not canRunMain() then
         return
@@ -1739,7 +2196,7 @@ spawn(function()
                 hopServer()
             end
         end
-        if safeZoneOn and hasPremium then
+        if safeZoneOn then
             local character = LocalPlayer.Character
             if character then
                 local humanoid = character:FindFirstChild("Humanoid")
@@ -2082,10 +2539,6 @@ UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
 end)
 UI.PredictBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
-    if not hasPremium then
-        notify("Predict Direction requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
-        return
-    end
     predictOn = not predictOn
     Config.PredictOn = predictOn
     SaveConfig()
@@ -2110,10 +2563,6 @@ UI.ServerHopBtn.MouseButton1Click:Connect(function()
 end)
 UI.SafeZoneBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
-    if not hasPremium then
-        notify("Auto Safe Zone requires premium. Set: getgenv().LuexKey = 'luexprenium'", 3)
-        return
-    end
     safeZoneOn = not safeZoneOn
     Config.SafeZoneOn = safeZoneOn
     SaveConfig()
@@ -2136,6 +2585,35 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
+UI.BlackFlashBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    UI.BlackFlashFrame.Visible = not UI.BlackFlashFrame.Visible
+    if UI.BlackFlashFrame.Visible then
+        syncBlackFlashUiState()
+        if blackFlash.partnerName then
+            UI.BlackFlashTargetBox.Text = blackFlash.partnerName
+        end
+    end
+end)
+UI.BlackFlashCloseBtn.MouseButton1Click:Connect(function()
+    UI.BlackFlashFrame.Visible = false
+end)
+UI.BlackFlashSendBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    sendBlackFlashInvite(UI.BlackFlashTargetBox.Text)
+end)
+UI.BlackFlashAcceptBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    respondBlackFlashInvite(true)
+end)
+UI.BlackFlashRejectBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    respondBlackFlashInvite(false)
+end)
+UI.BlackFlashStartBtn.MouseButton1Click:Connect(function()
+    if not canRunMain() then return end
+    setBlackFlashReady()
+end)
 UI.RefreshBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
     refreshPlayerList()
@@ -2156,6 +2634,10 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
 end)
 Players.PlayerRemoving:Connect(function(p)
     if not canRunMain() then return end
+    if blackFlash.partnerName == p.Name or blackFlash.incomingFrom == p.Name then
+        resetBlackFlashState("Partner left server")
+        notify("BlackFlash session reset: partner left", 2)
+    end
     if currentTarget == p then
         currentTarget = nil
         clearHighlight()
@@ -2274,22 +2756,18 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         hopServer()
     elseif input.KeyCode == Enum.KeyCode.F9 then
         -- Emergency safe zone toggle
-        if hasPremium then
-            safeZoneOn = not safeZoneOn
-            Config.SafeZoneOn = safeZoneOn
-            SaveConfig()
-            applyLang()
-            if safeZoneOn then
-                createSafeZoneGui()
-                createSafePlatform()
-                notify("Emergency Safe Zone Activated!", 2)
-            else
-                destroySafeZoneGui()
-                removeSafePlatform()
-                notify("Safe Zone Deactivated", 2)
-            end
+        safeZoneOn = not safeZoneOn
+        Config.SafeZoneOn = safeZoneOn
+        SaveConfig()
+        applyLang()
+        if safeZoneOn then
+            createSafeZoneGui()
+            createSafePlatform()
+            notify("Emergency Safe Zone Activated!", 2)
         else
-            notify("Premium feature required!", 2)
+            destroySafeZoneGui()
+            removeSafePlatform()
+            notify("Safe Zone Deactivated", 2)
         end
     end
 end)
