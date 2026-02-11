@@ -692,7 +692,11 @@ local blackFlash = {
     localReady = false,
     partnerReady = false,
     running = false,
-    lastPoll = 0
+    lastPoll = 0,
+    ws = nil,
+    wsConnected = false,
+    wsUrl = nil,
+    lastWsConnectTry = 0
 }
 local removeSafePlatform
 local complimentDialog = nil
@@ -876,6 +880,31 @@ local function getRequestFn()
     if request then return request end
     return nil
 end
+local function getWsConnectFn()
+    if websocket and websocket.connect then return websocket.connect end
+    if WebSocket and WebSocket.connect then return WebSocket.connect end
+    if syn and syn.websocket and syn.websocket.connect then return syn.websocket.connect end
+    return nil
+end
+local function buildBlackFlashWsUrl()
+    local url = blackFlashApiBase
+    if string.sub(url, 1, 8) == "https://" then
+        return "wss://" .. string.sub(url, 9) .. "/blackflash-ws"
+    end
+    if string.sub(url, 1, 7) == "http://" then
+        return "ws://" .. string.sub(url, 8) .. "/blackflash-ws"
+    end
+    return "wss://" .. url .. "/blackflash-ws"
+end
+local function blackFlashWsSend(payload)
+    if not blackFlash.ws or not blackFlash.wsConnected then
+        return false
+    end
+    local ok = pcall(function()
+        blackFlash.ws:Send(HttpService:JSONEncode(payload))
+    end)
+    return ok
+end
 local function getCharacterRemote()
     local character = LocalPlayer.Character
     if not character then return nil end
@@ -1033,11 +1062,19 @@ local function runSenderBlackFlashLoop()
                 blackFlash.running = false
                 resetBlackFlashState("Target dead or left server")
                 notify("BlackFlash stopped: target invalid/dead", 2)
-                callBlackFlashApi("POST", "/api/blackflash/end", {
+                local sentWs = blackFlashWsSend({
+                    type = "end",
                     inviteId = blackFlash.inviteId,
                     player = LocalPlayer.Name,
                     serverId = game.JobId
                 })
+                if not sentWs then
+                    callBlackFlashApi("POST", "/api/blackflash/end", {
+                        inviteId = blackFlash.inviteId,
+                        player = LocalPlayer.Name,
+                        serverId = game.JobId
+                    })
+                end
                 break
             end
             placeBehind(partner)
@@ -1060,11 +1097,19 @@ local function runReceiverBlackFlashLoop()
                 blackFlash.running = false
                 resetBlackFlashState("Partner dead or left server")
                 notify("BlackFlash stopped: partner invalid/dead", 2)
-                callBlackFlashApi("POST", "/api/blackflash/end", {
+                local sentWs = blackFlashWsSend({
+                    type = "end",
                     inviteId = blackFlash.inviteId,
                     player = LocalPlayer.Name,
                     serverId = game.JobId
                 })
+                if not sentWs then
+                    callBlackFlashApi("POST", "/api/blackflash/end", {
+                        inviteId = blackFlash.inviteId,
+                        player = LocalPlayer.Name,
+                        serverId = game.JobId
+                    })
+                end
                 break
             end
             placeFront(partner)
@@ -1083,6 +1128,143 @@ local function syncBlackFlashUiState()
     UI.BlackFlashStartBtn.Visible = blackFlash.inviteId ~= nil and blackFlash.mode ~= nil
     updateReadyReceiveButton()
 end
+local function handleBlackFlashWsMessage(decoded)
+    if type(decoded) ~= "table" then return end
+    local msgType = decoded.type
+    if msgType == "connected" then
+        setBlackFlashStatus("WebSocket connected")
+        return
+    end
+    if msgType == "registered" then
+        blackFlash.wsConnected = true
+        return
+    end
+    if msgType == "invite_sent" then
+        blackFlash.inviteId = decoded.inviteId
+        blackFlash.mode = "sender"
+        blackFlash.partnerName = decoded.receiver
+        blackFlash.localReady = false
+        blackFlash.partnerReady = false
+        setBlackFlashStatus("Invite sent to " .. tostring(decoded.receiver))
+        syncBlackFlashUiState()
+        return
+    end
+    if msgType == "incoming_invite" then
+        if blackFlash.receiveReady and not blackFlash.inviteId then
+            blackFlash.incomingInviteId = decoded.inviteId
+            blackFlash.incomingFrom = decoded.sender
+            setBlackFlashStatus("Incoming invite from " .. tostring(decoded.sender))
+            syncBlackFlashUiState()
+        end
+        return
+    end
+    if msgType == "invite_accepted" then
+        if not blackFlash.inviteId then
+            blackFlash.inviteId = decoded.inviteId
+        end
+        if not blackFlash.partnerName then
+            if blackFlash.mode == "sender" then
+                blackFlash.partnerName = decoded.receiver
+            else
+                blackFlash.partnerName = decoded.sender
+            end
+        end
+        setBlackFlashStatus("Invite accepted. Waiting both Start...")
+        syncBlackFlashUiState()
+        return
+    end
+    if msgType == "invite_rejected" then
+        resetBlackFlashState("Invite rejected")
+        notify("Loi moi BlackFlash bi tu choi", 2)
+        return
+    end
+    if msgType == "ready_update" then
+        if decoded.inviteId == blackFlash.inviteId then
+            if blackFlash.mode == "sender" then
+                blackFlash.partnerReady = decoded.receiverReady and true or false
+            else
+                blackFlash.partnerReady = decoded.senderReady and true or false
+            end
+            if blackFlash.localReady and blackFlash.partnerReady then
+                setBlackFlashStatus("Both ready. Running combo...")
+            else
+                setBlackFlashStatus("Ready update. Waiting partner...")
+            end
+        end
+        return
+    end
+    if msgType == "session_started" then
+        if decoded.inviteId == blackFlash.inviteId and not blackFlash.running then
+            blackFlash.partnerReady = true
+            if blackFlash.mode == "sender" then
+                runSenderBlackFlashLoop()
+            elseif blackFlash.mode == "receiver" then
+                runReceiverBlackFlashLoop()
+            end
+        end
+        return
+    end
+    if msgType == "session_ended" then
+        if decoded.inviteId == blackFlash.inviteId then
+            resetBlackFlashState("Session ended")
+        end
+        return
+    end
+end
+local function connectBlackFlashWebSocket(force)
+    if blackFlash.wsConnected and blackFlash.ws and not force then
+        return true
+    end
+    if not force and tick() - blackFlash.lastWsConnectTry < 2 then
+        return false
+    end
+    blackFlash.lastWsConnectTry = tick()
+    local connectFn = getWsConnectFn()
+    if not connectFn then
+        return false
+    end
+    local url = buildBlackFlashWsUrl()
+    blackFlash.wsUrl = url
+    local ok, ws = pcall(function()
+        return connectFn(url)
+    end)
+    if not ok or not ws then
+        blackFlash.wsConnected = false
+        return false
+    end
+    blackFlash.ws = ws
+    blackFlash.wsConnected = true
+    local function onMessage(raw)
+        local decoded = nil
+        pcall(function()
+            decoded = HttpService:JSONDecode(raw)
+        end)
+        handleBlackFlashWsMessage(decoded)
+    end
+    local function onClose()
+        blackFlash.wsConnected = false
+        blackFlash.ws = nil
+    end
+    pcall(function()
+        ws.OnMessage:Connect(onMessage)
+    end)
+    pcall(function()
+        ws.OnClose:Connect(onClose)
+    end)
+    pcall(function()
+        ws.OnMessage = onMessage
+    end)
+    pcall(function()
+        ws.OnClose = onClose
+    end)
+    blackFlashWsSend({
+        type = "register",
+        player = LocalPlayer.Name,
+        serverId = game.JobId,
+        placeId = game.PlaceId
+    })
+    return true
+end
 local function sendBlackFlashInvite(targetName)
     targetName = trimText(targetName)
     if targetName == "" then
@@ -1094,6 +1276,19 @@ local function sendBlackFlashInvite(targetName)
         notify("Khong tim thay player hop le", 2)
         return
     end
+    connectBlackFlashWebSocket(false)
+    local wsOk = blackFlashWsSend({
+        type = "invite",
+        sender = LocalPlayer.Name,
+        receiver = targetPlayer.Name,
+        serverId = game.JobId,
+        placeId = game.PlaceId
+    })
+    if wsOk then
+        setBlackFlashStatus("Sending invite...")
+        notify("Dang gui loi moi BlackFlash...", 1.5)
+        return
+    end
     local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/invite", {
         sender = LocalPlayer.Name,
         receiver = targetPlayer.Name,
@@ -1101,7 +1296,7 @@ local function sendBlackFlashInvite(targetName)
         placeId = game.PlaceId
     })
     if not ok then
-        notify("Gui loi moi that bai (kiem tra api)", 2.5)
+        notify("Gui loi moi that bai (kiem tra api/ws)", 2.5)
         return
     end
     local payload = data and (data.data or data) or {}
@@ -1119,15 +1314,25 @@ local function respondBlackFlashInvite(accepted)
         notify("Khong co loi moi nao", 2)
         return
     end
-    local ok = callBlackFlashApi("POST", "/api/blackflash/respond", {
+    connectBlackFlashWebSocket(false)
+    local wsOk = blackFlashWsSend({
+        type = "respond",
         inviteId = blackFlash.incomingInviteId,
         player = LocalPlayer.Name,
         accepted = accepted and true or false,
         serverId = game.JobId
     })
-    if not ok then
-        notify("Phan hoi loi moi that bai", 2)
-        return
+    if (not wsOk) then
+        local ok = callBlackFlashApi("POST", "/api/blackflash/respond", {
+            inviteId = blackFlash.incomingInviteId,
+            player = LocalPlayer.Name,
+            accepted = accepted and true or false,
+            serverId = game.JobId
+        })
+        if not ok then
+            notify("Phan hoi loi moi that bai", 2)
+            return
+        end
     end
     if accepted then
         blackFlash.inviteId = blackFlash.incomingInviteId
@@ -1151,16 +1356,27 @@ local function setBlackFlashReady()
         notify("Chua co room BlackFlash", 2)
         return
     end
-    local ok = callBlackFlashApi("POST", "/api/blackflash/start", {
+    connectBlackFlashWebSocket(false)
+    local wsOk = blackFlashWsSend({
+        type = "start",
         inviteId = blackFlash.inviteId,
         player = LocalPlayer.Name,
         role = blackFlash.mode,
         ready = true,
         serverId = game.JobId
     })
-    if not ok then
-        notify("Start that bai (api)", 2)
-        return
+    if not wsOk then
+        local ok = callBlackFlashApi("POST", "/api/blackflash/start", {
+            inviteId = blackFlash.inviteId,
+            player = LocalPlayer.Name,
+            role = blackFlash.mode,
+            ready = true,
+            serverId = game.JobId
+        })
+        if not ok then
+            notify("Start that bai (api/ws)", 2)
+            return
+        end
     end
     blackFlash.localReady = true
     blackFlash.lastPoll = 0
@@ -1168,6 +1384,9 @@ local function setBlackFlashReady()
     notify("Da Start. Dang doi doi tac...", 2)
 end
 local function pollBlackFlashState()
+    if blackFlash.wsConnected then
+        return
+    end
     if tick() - blackFlash.lastPoll < getBlackFlashPollInterval() then return end
     blackFlash.lastPoll = tick()
     local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/poll", {
@@ -1927,6 +2146,7 @@ startMain = function()
     mainStarted = true
     loadLang()
     applyLang()
+    connectBlackFlashWebSocket(false)
     syncBlackFlashUiState()
     updateReadyReceiveButton()
     if not blackFlash.partnerName then
@@ -2178,6 +2398,7 @@ end)
 spawn(function()
     while true do
         pcall(function()
+            connectBlackFlashWebSocket(false)
             pollBlackFlashState()
         end)
         task.wait(0.01)
@@ -2622,6 +2843,7 @@ UI.BlackFlashBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
     UI.BlackFlashFrame.Visible = not UI.BlackFlashFrame.Visible
     if UI.BlackFlashFrame.Visible then
+        connectBlackFlashWebSocket(false)
         syncBlackFlashUiState()
         if blackFlash.partnerName then
             UI.BlackFlashTargetBox.Text = blackFlash.partnerName
@@ -2638,6 +2860,9 @@ end)
 UI.BlackFlashReadyReceiveBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
     blackFlash.receiveReady = not blackFlash.receiveReady
+    if blackFlash.receiveReady then
+        connectBlackFlashWebSocket(true)
+    end
     updateReadyReceiveButton()
     blackFlash.lastPoll = 0
     if blackFlash.receiveReady then
