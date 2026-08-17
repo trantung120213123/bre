@@ -14,10 +14,10 @@ local Config = {
     PredictOn = false,
     ServerHopOn = false,
     SafeZoneOn = false,
+    VoidCheckOn = true,
     AutoRefreshOn = false,
     UIPosition = {0.05, 0, 0.12, 0},
     PositionMode = "Behind",
-    StealthOn = false,
     SpeedBoostOn = false,
     SelectedTargets = {},
     BlacklistedPlayers = {PROTECTED_USER}
@@ -38,6 +38,7 @@ local function SaveConfig()
     getgenv().LuexConfig = Config
 end
 LoadConfig()
+Config.StealthOn = nil
 pcall(function()
     if game.CoreGui:FindFirstChild("LuexUI") then
         game.CoreGui.LuexUI:Destroy()
@@ -46,6 +47,7 @@ end)
 local screen = Instance.new("ScreenGui")
 screen.Name = "LuexUI"
 screen.ResetOnSpawn = false
+screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screen.Parent = game.CoreGui
 local main = Instance.new("Frame")
 main.Name = "Main"
@@ -56,6 +58,7 @@ main.BackgroundTransparency = 0.15
 main.BorderSizePixel = 0
 main.ClipsDescendants = true
 main.Active = true
+main.ZIndex = 1
 main.Parent = screen
 local border = Instance.new("Frame", main)
 border.Name = "BorderGlow"
@@ -64,6 +67,8 @@ border.Position = UDim2.new(0.5,0,0.5,0)
 border.Size = UDim2.new(1,10,1,10)
 border.BackgroundTransparency = 1
 border.ZIndex = 0
+border.Active = false
+border.Selectable = false
 local borderStroke = Instance.new("UIStroke", border)
 borderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 borderStroke.Color = Color3.fromRGB(255,30,30)
@@ -74,6 +79,8 @@ topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1,0,0,46)
 topBar.Position = UDim2.new(0,0,0,0)
 topBar.BackgroundTransparency = 1
+topBar.Active = true
+topBar.ZIndex = 25
 local logo = Instance.new("TextLabel", topBar)
 logo.Name = "Logo"
 logo.Text = "LUEX"
@@ -87,9 +94,11 @@ logo.Position = UDim2.new(0, 12, 0, 6)
 logo.Size = UDim2.new(0, 160, 0, 34)
 logo.TextXAlignment = Enum.TextXAlignment.Left
 logo.ZIndex = 3
+logo.Active = false
 local gradHolder = Instance.new("Frame", logo)
 gradHolder.Size = UDim2.new(1,0,1,0)
 gradHolder.BackgroundTransparency = 1
+gradHolder.Active = false
 local uiGrad = Instance.new("UIGradient", gradHolder)
 uiGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 20)),
@@ -104,6 +113,7 @@ crackContainer.Size = UDim2.new(0, 140, 0, 34)
 crackContainer.Position = UDim2.new(0, 12, 0, 6)
 crackContainer.BackgroundTransparency = 1
 crackContainer.ZIndex = 2
+crackContainer.Active = false
 local function makeCrackLine(x, y, width, rot)
     local f = Instance.new("Frame", crackContainer)
     f.Size = UDim2.new(0, width, 0, 2)
@@ -128,13 +138,80 @@ minBtn.Text = "-"
 minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 22
 minBtn.TextColor3 = Color3.fromRGB(240,240,240)
-minBtn.ZIndex = 4
+minBtn.Active = true
+minBtn.ZIndex = 35
 local content = Instance.new("Frame", main)
 content.Name = "Content"
-content.Position = UDim2.new(0, 12, 0, 56)
-content.Size = UDim2.new(1, -24, 1, -68)
+content.Position = UDim2.new(0, 12, 0, 92)
+content.Size = UDim2.new(1, -24, 1, -104)
 content.BackgroundTransparency = 1
-local leftColumn = Instance.new("ScrollingFrame", content)
+content.ZIndex = 1
+local tabBar = Instance.new("Frame", main)
+tabBar.Name = "TabBar"
+tabBar.Position = UDim2.new(0, 12, 0, 54)
+tabBar.Size = UDim2.new(1, -24, 0, 30)
+tabBar.BackgroundTransparency = 1
+tabBar.Active = true
+tabBar.ZIndex = 20
+local btnCombatTab = Instance.new("TextButton", tabBar)
+btnCombatTab.Size = UDim2.new(0.33, -4, 1, 0)
+btnCombatTab.Position = UDim2.new(0, 0, 0, 0)
+btnCombatTab.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
+btnCombatTab.BorderSizePixel = 0
+btnCombatTab.Text = "Combat"
+btnCombatTab.Font = Enum.Font.GothamBold
+btnCombatTab.TextSize = 13
+btnCombatTab.TextColor3 = Color3.fromRGB(255,255,255)
+btnCombatTab.Active = true
+btnCombatTab.ZIndex = 21
+local btnSafetyTab = Instance.new("TextButton", tabBar)
+btnSafetyTab.Size = UDim2.new(0.34, -4, 1, 0)
+btnSafetyTab.Position = UDim2.new(0.33, 2, 0, 0)
+btnSafetyTab.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnSafetyTab.BorderSizePixel = 0
+btnSafetyTab.Text = "Safety"
+btnSafetyTab.Font = Enum.Font.GothamBold
+btnSafetyTab.TextSize = 13
+btnSafetyTab.TextColor3 = Color3.fromRGB(240,240,240)
+btnSafetyTab.Active = true
+btnSafetyTab.ZIndex = 21
+local btnSettingsTab = Instance.new("TextButton", tabBar)
+btnSettingsTab.Size = UDim2.new(0.33, -4, 1, 0)
+btnSettingsTab.Position = UDim2.new(0.67, 4, 0, 0)
+btnSettingsTab.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnSettingsTab.BorderSizePixel = 0
+btnSettingsTab.Text = "Settings"
+btnSettingsTab.Font = Enum.Font.GothamBold
+btnSettingsTab.TextSize = 13
+btnSettingsTab.TextColor3 = Color3.fromRGB(240,240,240)
+btnSettingsTab.Active = true
+btnSettingsTab.ZIndex = 21
+local combatTab = Instance.new("Frame", content)
+combatTab.Name = "CombatTab"
+combatTab.Size = UDim2.new(1, 0, 1, 0)
+combatTab.BackgroundTransparency = 1
+combatTab.ZIndex = 2
+local safetyTab = Instance.new("ScrollingFrame", content)
+safetyTab.Name = "SafetyTab"
+safetyTab.Size = UDim2.new(1, 0, 1, 0)
+safetyTab.BackgroundTransparency = 1
+safetyTab.BorderSizePixel = 0
+safetyTab.ScrollBarThickness = 6
+safetyTab.AutomaticCanvasSize = Enum.AutomaticSize.Y
+safetyTab.CanvasSize = UDim2.new(0, 0, 0, 0)
+safetyTab.ZIndex = 2
+safetyTab.Visible = false
+local settingsTab = Instance.new("ScrollingFrame", content)
+settingsTab.Name = "SettingsTab"
+settingsTab.Size = UDim2.new(1, 0, 1, 0)
+settingsTab.BackgroundTransparency = 1
+settingsTab.BorderSizePixel = 0
+settingsTab.ScrollBarThickness = 6
+settingsTab.AutomaticCanvasSize = Enum.AutomaticSize.Y
+settingsTab.CanvasSize = UDim2.new(0, 0, 0, 0)
+settingsTab.ZIndex = 2
+settingsTab.Visible = false
+local leftColumn = Instance.new("ScrollingFrame", combatTab)
 leftColumn.Name = "LeftColumn"
 leftColumn.Size = UDim2.new(0.48, 0, 1, 0)
 leftColumn.Position = UDim2.new(0, 0, 0, 0)
@@ -145,11 +222,22 @@ leftColumn.ScrollBarThickness = 6
 leftColumn.AutomaticCanvasSize = Enum.AutomaticSize.Y
 leftColumn.CanvasSize = UDim2.new(0, 0, 0, 0)
 leftColumn.ScrollingDirection = Enum.ScrollingDirection.Y
-local rightColumn = Instance.new("Frame", content)
+local rightColumn = Instance.new("Frame", combatTab)
 rightColumn.Name = "RightColumn"
 rightColumn.Size = UDim2.new(0.48, 0, 1, 0)
 rightColumn.Position = UDim2.new(0.52, 0, 0, 0)
 rightColumn.BackgroundTransparency = 1
+local function addButtonStroke(button)
+    local stroke = Instance.new("UIStroke", button)
+    stroke.Color = Color3.fromRGB(200,20,20)
+    stroke.Transparency = 0.85
+    stroke.Thickness = 1.5
+    return stroke
+end
+local function activateButton(button, zIndex)
+    button.Active = true
+    button.ZIndex = zIndex or 10
+end
 local btnAuto = Instance.new("TextButton", leftColumn)
 btnAuto.Size = UDim2.new(1, 0, 0, 36)
 btnAuto.Position = UDim2.new(0, 0, 0, 0)
@@ -160,10 +248,8 @@ btnAuto.Font = Enum.Font.GothamBold
 btnAuto.TextSize = 14
 btnAuto.TextColor3 = Color3.fromRGB(240,240,240)
 btnAuto.AutoButtonColor = false
-local strokeAuto = Instance.new("UIStroke", btnAuto)
-strokeAuto.Color = Color3.fromRGB(200,20,20)
-strokeAuto.Transparency = 0.85
-strokeAuto.Thickness = 1.5
+activateButton(btnAuto)
+addButtonStroke(btnAuto)
 local btnAutoSelected = Instance.new("TextButton", leftColumn)
 btnAutoSelected.Size = UDim2.new(1, 0, 0, 36)
 btnAutoSelected.Position = UDim2.new(0, 0, 0, 40)
@@ -174,10 +260,8 @@ btnAutoSelected.Font = Enum.Font.GothamBold
 btnAutoSelected.TextSize = 14
 btnAutoSelected.TextColor3 = Color3.fromRGB(240,240,240)
 btnAutoSelected.AutoButtonColor = false
-local strokeSelected = Instance.new("UIStroke", btnAutoSelected)
-strokeSelected.Color = Color3.fromRGB(200,20,20)
-strokeSelected.Transparency = 0.85
-strokeSelected.Thickness = 1.5
+activateButton(btnAutoSelected)
+addButtonStroke(btnAutoSelected)
 local btnMultiSelected = Instance.new("TextButton", leftColumn)
 btnMultiSelected.Size = UDim2.new(1, 0, 0, 36)
 btnMultiSelected.Position = UDim2.new(0, 0, 0, 80)
@@ -188,10 +272,8 @@ btnMultiSelected.Font = Enum.Font.GothamBold
 btnMultiSelected.TextSize = 14
 btnMultiSelected.TextColor3 = Color3.fromRGB(240,240,240)
 btnMultiSelected.AutoButtonColor = false
-local strokeMulti = Instance.new("UIStroke", btnMultiSelected)
-strokeMulti.Color = Color3.fromRGB(200,20,20)
-strokeMulti.Transparency = 0.85
-strokeMulti.Thickness = 1.5
+activateButton(btnMultiSelected)
+addButtonStroke(btnMultiSelected)
 local btnChangePlayer = Instance.new("TextButton", leftColumn)
 btnChangePlayer.Size = UDim2.new(1, 0, 0, 36)
 btnChangePlayer.Position = UDim2.new(0, 0, 0, 120)
@@ -202,10 +284,8 @@ btnChangePlayer.Font = Enum.Font.GothamBold
 btnChangePlayer.TextSize = 14
 btnChangePlayer.TextColor3 = Color3.fromRGB(240,240,240)
 btnChangePlayer.AutoButtonColor = false
-local stroke2 = Instance.new("UIStroke", btnChangePlayer)
-stroke2.Color = Color3.fromRGB(200,20,20)
-stroke2.Transparency = 0.85
-stroke2.Thickness = 1.5
+activateButton(btnChangePlayer)
+addButtonStroke(btnChangePlayer)
 local btnBlacklist = Instance.new("TextButton", leftColumn)
 btnBlacklist.Size = UDim2.new(1, 0, 0, 36)
 btnBlacklist.Position = UDim2.new(0, 0, 0, 160)
@@ -216,10 +296,8 @@ btnBlacklist.Font = Enum.Font.GothamBold
 btnBlacklist.TextSize = 14
 btnBlacklist.TextColor3 = Color3.fromRGB(255, 50, 50)
 btnBlacklist.AutoButtonColor = false
-local strokeBlacklist = Instance.new("UIStroke", btnBlacklist)
-strokeBlacklist.Color = Color3.fromRGB(200,20,20)
-strokeBlacklist.Transparency = 0.85
-strokeBlacklist.Thickness = 1.5
+activateButton(btnBlacklist)
+addButtonStroke(btnBlacklist)
 local btnPositionMode = Instance.new("TextButton", leftColumn)
 btnPositionMode.Size = UDim2.new(1, 0, 0, 36)
 btnPositionMode.Position = UDim2.new(0, 0, 0, 200)
@@ -230,27 +308,11 @@ btnPositionMode.Font = Enum.Font.GothamBold
 btnPositionMode.TextSize = 14
 btnPositionMode.TextColor3 = Color3.fromRGB(240,240,240)
 btnPositionMode.AutoButtonColor = false
-local strokePosMode = Instance.new("UIStroke", btnPositionMode)
-strokePosMode.Color = Color3.fromRGB(200,20,20)
-strokePosMode.Transparency = 0.85
-strokePosMode.Thickness = 1.5
-local btnStealth = Instance.new("TextButton", leftColumn)
-btnStealth.Size = UDim2.new(1, 0, 0, 36)
-btnStealth.Position = UDim2.new(0, 0, 0, 240)
-btnStealth.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
-btnStealth.BorderSizePixel = 0
-btnStealth.Text = "Stealth Mode: "..(Config.StealthOn and "ON" or "OFF")
-btnStealth.Font = Enum.Font.GothamBold
-btnStealth.TextSize = 14
-btnStealth.TextColor3 = Color3.fromRGB(240,240,240)
-btnStealth.AutoButtonColor = false
-local strokeStealth = Instance.new("UIStroke", btnStealth)
-strokeStealth.Color = Color3.fromRGB(200,20,20)
-strokeStealth.Transparency = 0.85
-strokeStealth.Thickness = 1.5
+activateButton(btnPositionMode)
+addButtonStroke(btnPositionMode)
 local btnSpeedBoost = Instance.new("TextButton", leftColumn)
 btnSpeedBoost.Size = UDim2.new(1, 0, 0, 36)
-btnSpeedBoost.Position = UDim2.new(0, 0, 0, 280)
+btnSpeedBoost.Position = UDim2.new(0, 0, 0, 240)
 btnSpeedBoost.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSpeedBoost.BorderSizePixel = 0
 btnSpeedBoost.Text = "Speed Boost: "..(Config.SpeedBoostOn and "ON" or "OFF")
@@ -258,13 +320,11 @@ btnSpeedBoost.Font = Enum.Font.GothamBold
 btnSpeedBoost.TextSize = 14
 btnSpeedBoost.TextColor3 = Color3.fromRGB(240,240,240)
 btnSpeedBoost.AutoButtonColor = false
-local strokeSpeed = Instance.new("UIStroke", btnSpeedBoost)
-strokeSpeed.Color = Color3.fromRGB(200,20,20)
-strokeSpeed.Transparency = 0.85
-strokeSpeed.Thickness = 1.5
+activateButton(btnSpeedBoost)
+addButtonStroke(btnSpeedBoost)
 local btnPredict = Instance.new("TextButton", leftColumn)
 btnPredict.Size = UDim2.new(1, 0, 0, 36)
-btnPredict.Position = UDim2.new(0, 0, 0, 320)
+btnPredict.Position = UDim2.new(0, 0, 0, 280)
 btnPredict.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnPredict.BorderSizePixel = 0
 btnPredict.Text = "Predict Direction: "..(Config.PredictOn and "ON" or "OFF")
@@ -272,13 +332,11 @@ btnPredict.Font = Enum.Font.GothamBold
 btnPredict.TextSize = 14
 btnPredict.TextColor3 = Color3.fromRGB(240,240,240)
 btnPredict.AutoButtonColor = false
-local stroke3 = Instance.new("UIStroke", btnPredict)
-stroke3.Color = Color3.fromRGB(200,20,20)
-stroke3.Transparency = 0.85
-stroke3.Thickness = 1.5
+activateButton(btnPredict)
+addButtonStroke(btnPredict)
 local btnServerHop = Instance.new("TextButton", leftColumn)
 btnServerHop.Size = UDim2.new(1, 0, 0, 36)
-btnServerHop.Position = UDim2.new(0, 0, 0, 360)
+btnServerHop.Position = UDim2.new(0, 0, 0, 320)
 btnServerHop.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnServerHop.BorderSizePixel = 0
 btnServerHop.Text = "Auto Server Hop: "..(Config.ServerHopOn and "ON" or "OFF")
@@ -286,13 +344,11 @@ btnServerHop.Font = Enum.Font.GothamBold
 btnServerHop.TextSize = 14
 btnServerHop.TextColor3 = Color3.fromRGB(240,240,240)
 btnServerHop.AutoButtonColor = false
-local stroke5 = Instance.new("UIStroke", btnServerHop)
-stroke5.Color = Color3.fromRGB(200,20,20)
-stroke5.Transparency = 0.85
-stroke5.Thickness = 1.5
+activateButton(btnServerHop)
+addButtonStroke(btnServerHop)
 local btnSafeZone = Instance.new("TextButton", leftColumn)
 btnSafeZone.Size = UDim2.new(1, 0, 0, 36)
-btnSafeZone.Position = UDim2.new(0, 0, 0, 400)
+btnSafeZone.Position = UDim2.new(0, 0, 0, 360)
 btnSafeZone.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
 btnSafeZone.BorderSizePixel = 0
 btnSafeZone.Text = "Auto Safe Zone: "..(Config.SafeZoneOn and "ON" or "OFF")
@@ -300,24 +356,61 @@ btnSafeZone.Font = Enum.Font.GothamBold
 btnSafeZone.TextSize = 14
 btnSafeZone.TextColor3 = Color3.fromRGB(240,240,240)
 btnSafeZone.AutoButtonColor = false
-local stroke6 = Instance.new("UIStroke", btnSafeZone)
-stroke6.Color = Color3.fromRGB(200,20,20)
-stroke6.Transparency = 0.85
-stroke6.Thickness = 1.5
-local btnBlackFlash = Instance.new("TextButton", leftColumn)
-btnBlackFlash.Size = UDim2.new(1, 0, 0, 36)
-btnBlackFlash.Position = UDim2.new(0, 0, 0, 440)
-btnBlackFlash.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
-btnBlackFlash.BorderSizePixel = 0
-btnBlackFlash.Text = "BlackFlash 2P"
-btnBlackFlash.Font = Enum.Font.GothamBold
-btnBlackFlash.TextSize = 14
-btnBlackFlash.TextColor3 = Color3.fromRGB(240,240,240)
-btnBlackFlash.AutoButtonColor = false
-local strokeBlackFlash = Instance.new("UIStroke", btnBlackFlash)
-strokeBlackFlash.Color = Color3.fromRGB(200,20,20)
-strokeBlackFlash.Transparency = 0.85
-strokeBlackFlash.Thickness = 1.5
+activateButton(btnSafeZone)
+addButtonStroke(btnSafeZone)
+local btnVoidCheck = Instance.new("TextButton", leftColumn)
+btnVoidCheck.Size = UDim2.new(1, 0, 0, 36)
+btnVoidCheck.Position = UDim2.new(0, 0, 0, 400)
+btnVoidCheck.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
+btnVoidCheck.BorderSizePixel = 0
+btnVoidCheck.Text = "Void Check: "..(Config.VoidCheckOn and "ON" or "OFF")
+btnVoidCheck.Font = Enum.Font.GothamBold
+btnVoidCheck.TextSize = 14
+btnVoidCheck.TextColor3 = Color3.fromRGB(240,240,240)
+btnVoidCheck.AutoButtonColor = false
+activateButton(btnVoidCheck)
+addButtonStroke(btnVoidCheck)
+btnSafeZone.Parent = safetyTab
+btnSafeZone.Position = UDim2.new(0, 0, 0, 0)
+btnSafeZone.Size = UDim2.new(1, -6, 0, 36)
+btnVoidCheck.Parent = safetyTab
+btnVoidCheck.Position = UDim2.new(0, 0, 0, 40)
+btnVoidCheck.Size = UDim2.new(1, -6, 0, 36)
+btnServerHop.Parent = settingsTab
+btnServerHop.Position = UDim2.new(0, 0, 0, 0)
+btnServerHop.Size = UDim2.new(1, -6, 0, 36)
+btnBlacklist.Parent = settingsTab
+btnBlacklist.Position = UDim2.new(0, 0, 0, 40)
+btnBlacklist.Size = UDim2.new(1, -6, 0, 36)
+
+local safetyStatusBox = Instance.new("TextLabel", safetyTab)
+safetyStatusBox.Size = UDim2.new(1, -6, 0, 116)
+safetyStatusBox.Position = UDim2.new(0, 0, 0, 86)
+safetyStatusBox.BackgroundColor3 = Color3.fromRGB(20, 5, 5)
+safetyStatusBox.BackgroundTransparency = 0.15
+safetyStatusBox.BorderSizePixel = 0
+safetyStatusBox.TextColor3 = Color3.fromRGB(255, 220, 220)
+safetyStatusBox.TextSize = 12
+safetyStatusBox.Font = Enum.Font.Gotham
+safetyStatusBox.TextWrapped = true
+safetyStatusBox.TextXAlignment = Enum.TextXAlignment.Left
+safetyStatusBox.TextYAlignment = Enum.TextYAlignment.Top
+safetyStatusBox.Text = "Anti-void status: Ready\nCurrent safe point: Waiting\nTarget protection: Active"
+
+local updateBox = Instance.new("TextLabel", settingsTab)
+updateBox.Size = UDim2.new(1, -6, 0, 130)
+updateBox.Position = UDim2.new(0, 0, 0, 86)
+updateBox.BackgroundColor3 = Color3.fromRGB(20, 5, 5)
+updateBox.BackgroundTransparency = 0.15
+updateBox.BorderSizePixel = 0
+updateBox.TextColor3 = Color3.fromRGB(255, 220, 220)
+updateBox.TextSize = 12
+updateBox.Font = Enum.Font.Gotham
+updateBox.TextWrapped = true
+updateBox.TextXAlignment = Enum.TextXAlignment.Left
+updateBox.TextYAlignment = Enum.TextYAlignment.Top
+updateBox.Text = "Updates: loading..."
+
 local hint = Instance.new("TextLabel", content)
 hint.Size = UDim2.new(0.48,0,0,24)
 hint.Position = UDim2.new(0,0,1,-24)
@@ -327,6 +420,7 @@ hint.TextSize = 11
 hint.Font = Enum.Font.Gotham
 hint.Text = "Luex ULTRA v3.2 | Blacklist Protection + Sequential Multi"
 hint.TextWrapped = true
+
 local playerTitle = Instance.new("TextLabel", rightColumn)
 playerTitle.Size = UDim2.new(1, 0, 0, 28)
 playerTitle.Position = UDim2.new(0, 0, 0, 0)
@@ -336,6 +430,7 @@ playerTitle.TextSize = 14
 playerTitle.Font = Enum.Font.GothamBold
 playerTitle.Text = "PLAYER SELECTION (Click to Toggle)"
 playerTitle.TextXAlignment = Enum.TextXAlignment.Left
+
 local playerListContainer = Instance.new("ScrollingFrame", rightColumn)
 playerListContainer.Name = "PlayerList"
 playerListContainer.Size = UDim2.new(1, 0, 0, 220)
@@ -347,6 +442,7 @@ playerListContainer.ScrollBarThickness = 6
 playerListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playerListContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 playerListContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+
 local refreshBtn = Instance.new("TextButton", rightColumn)
 refreshBtn.Size = UDim2.new(1, 0, 0, 32)
 refreshBtn.Position = UDim2.new(0, 0, 1, -64)
@@ -357,10 +453,9 @@ refreshBtn.Font = Enum.Font.GothamBold
 refreshBtn.TextSize = 14
 refreshBtn.TextColor3 = Color3.fromRGB(240,240,240)
 refreshBtn.AutoButtonColor = false
-local stroke7 = Instance.new("UIStroke", refreshBtn)
-stroke7.Color = Color3.fromRGB(200,20,20)
-stroke7.Transparency = 0.85
-stroke7.Thickness = 1.5
+activateButton(refreshBtn)
+addButtonStroke(refreshBtn)
+
 local autoRefreshToggle = Instance.new("TextButton", rightColumn)
 autoRefreshToggle.Size = UDim2.new(1, 0, 0, 32)
 autoRefreshToggle.Position = UDim2.new(0, 0, 1, -32)
@@ -371,20 +466,21 @@ autoRefreshToggle.Font = Enum.Font.GothamBold
 autoRefreshToggle.TextSize = 14
 autoRefreshToggle.TextColor3 = Color3.fromRGB(240,240,240)
 autoRefreshToggle.AutoButtonColor = false
-local stroke8 = Instance.new("UIStroke", autoRefreshToggle)
-stroke8.Color = Color3.fromRGB(200,20,20)
-stroke8.Transparency = 0.85
-stroke8.Thickness = 1.5
+activateButton(autoRefreshToggle)
+addButtonStroke(autoRefreshToggle)
+
 local glowFrame = Instance.new("Frame", logo)
 glowFrame.Size = UDim2.new(1.6, 0, 1.6, 0)
 glowFrame.Position = UDim2.new(-0.3, 0, -0.3, 0)
 glowFrame.BackgroundColor3 = Color3.fromRGB(255, 60, 20)
 glowFrame.BackgroundTransparency = 0.95
 glowFrame.ZIndex = 1
+glowFrame.Active = false
 local glowStroke = Instance.new("UIStroke", glowFrame)
 glowStroke.Color = Color3.fromRGB(255, 80, 20)
 glowStroke.Transparency = 0.9
 glowStroke.Thickness = 6
+
 -- Blacklist UI
 local blacklistFrame = Instance.new("Frame")
 blacklistFrame.Name = "BlacklistFrame"
@@ -443,147 +539,40 @@ blacklistPlayerList.BorderSizePixel = 0
 blacklistPlayerList.ScrollBarThickness = 6
 blacklistPlayerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 blacklistPlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
-local blackFlashFrame = Instance.new("Frame")
-blackFlashFrame.Name = "BlackFlashFrame"
-blackFlashFrame.Size = UDim2.new(0, 420, 0, 240)
-blackFlashFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-blackFlashFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-blackFlashFrame.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
-blackFlashFrame.BackgroundTransparency = 0.1
-blackFlashFrame.BorderSizePixel = 0
-blackFlashFrame.Visible = false
-blackFlashFrame.ZIndex = 20
-blackFlashFrame.Parent = screen
-local blackFlashBorder = Instance.new("UIStroke", blackFlashFrame)
-blackFlashBorder.Color = Color3.fromRGB(255, 30, 30)
-blackFlashBorder.Thickness = 3
-blackFlashBorder.Transparency = 0.3
-local blackFlashTopBar = Instance.new("Frame", blackFlashFrame)
-blackFlashTopBar.Size = UDim2.new(1, 0, 0, 40)
-blackFlashTopBar.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
-blackFlashTopBar.BorderSizePixel = 0
-local blackFlashTitle = Instance.new("TextLabel", blackFlashTopBar)
-blackFlashTitle.Size = UDim2.new(1, -80, 1, 0)
-blackFlashTitle.Position = UDim2.new(0, 10, 0, 0)
-blackFlashTitle.BackgroundTransparency = 1
-blackFlashTitle.Text = "BLACKFLASH 2P"
-blackFlashTitle.Font = Enum.Font.GothamBlack
-blackFlashTitle.TextSize = 18
-blackFlashTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
-blackFlashTitle.TextXAlignment = Enum.TextXAlignment.Left
-local blackFlashCloseBtn = Instance.new("TextButton", blackFlashTopBar)
-blackFlashCloseBtn.Size = UDim2.new(0, 60, 0, 30)
-blackFlashCloseBtn.Position = UDim2.new(1, -70, 0, 5)
-blackFlashCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
-blackFlashCloseBtn.BorderSizePixel = 0
-blackFlashCloseBtn.Text = "X"
-blackFlashCloseBtn.Font = Enum.Font.GothamBold
-blackFlashCloseBtn.TextSize = 20
-blackFlashCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-local blackFlashTargetBox = Instance.new("TextBox", blackFlashFrame)
-blackFlashTargetBox.Size = UDim2.new(1, -20, 0, 36)
-blackFlashTargetBox.Position = UDim2.new(0, 10, 0, 55)
-blackFlashTargetBox.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
-blackFlashTargetBox.BorderSizePixel = 0
-blackFlashTargetBox.Text = ""
-blackFlashTargetBox.PlaceholderText = "Nhap ten player can moi..."
-blackFlashTargetBox.Font = Enum.Font.Gotham
-blackFlashTargetBox.TextSize = 14
-blackFlashTargetBox.TextColor3 = Color3.fromRGB(255, 220, 220)
-blackFlashTargetBox.PlaceholderColor3 = Color3.fromRGB(180, 120, 120)
-local blackFlashSendBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashSendBtn.Size = UDim2.new(0.48, -5, 0, 34)
-blackFlashSendBtn.Position = UDim2.new(0, 10, 0, 98)
-blackFlashSendBtn.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
-blackFlashSendBtn.BorderSizePixel = 0
-blackFlashSendBtn.Text = "Send Invite"
-blackFlashSendBtn.Font = Enum.Font.GothamBold
-blackFlashSendBtn.TextSize = 14
-blackFlashSendBtn.TextColor3 = Color3.fromRGB(240,240,240)
-local blackFlashAcceptBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashAcceptBtn.Size = UDim2.new(0.26, -4, 0, 34)
-blackFlashAcceptBtn.Position = UDim2.new(0.48, 7, 0, 98)
-blackFlashAcceptBtn.BackgroundColor3 = Color3.fromRGB(20, 70, 20)
-blackFlashAcceptBtn.BorderSizePixel = 0
-blackFlashAcceptBtn.Text = "Accept"
-blackFlashAcceptBtn.Font = Enum.Font.GothamBold
-blackFlashAcceptBtn.TextSize = 14
-blackFlashAcceptBtn.TextColor3 = Color3.fromRGB(240,240,240)
-blackFlashAcceptBtn.Visible = false
-local blackFlashRejectBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashRejectBtn.Size = UDim2.new(0.26, -4, 0, 34)
-blackFlashRejectBtn.Position = UDim2.new(0.74, 8, 0, 98)
-blackFlashRejectBtn.BackgroundColor3 = Color3.fromRGB(90, 20, 20)
-blackFlashRejectBtn.BorderSizePixel = 0
-blackFlashRejectBtn.Text = "Reject"
-blackFlashRejectBtn.Font = Enum.Font.GothamBold
-blackFlashRejectBtn.TextSize = 14
-blackFlashRejectBtn.TextColor3 = Color3.fromRGB(240,240,240)
-blackFlashRejectBtn.Visible = false
-local blackFlashStartBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashStartBtn.Size = UDim2.new(0.48, -5, 0, 36)
-blackFlashStartBtn.Position = UDim2.new(0.52, -5, 0, 140)
-blackFlashStartBtn.BackgroundColor3 = Color3.fromRGB(160, 25, 25)
-blackFlashStartBtn.BorderSizePixel = 0
-blackFlashStartBtn.Text = "Start BlackFlash"
-blackFlashStartBtn.Font = Enum.Font.GothamBold
-blackFlashStartBtn.TextSize = 15
-blackFlashStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
-blackFlashStartBtn.Visible = false
-local blackFlashReadyReceiveBtn = Instance.new("TextButton", blackFlashFrame)
-blackFlashReadyReceiveBtn.Size = UDim2.new(0.48, -5, 0, 36)
-blackFlashReadyReceiveBtn.Position = UDim2.new(0, 10, 0, 140)
-blackFlashReadyReceiveBtn.BackgroundColor3 = Color3.fromRGB(35, 6, 6)
-blackFlashReadyReceiveBtn.BorderSizePixel = 0
-blackFlashReadyReceiveBtn.Text = "Ready Receive: OFF"
-blackFlashReadyReceiveBtn.Font = Enum.Font.GothamBold
-blackFlashReadyReceiveBtn.TextSize = 14
-blackFlashReadyReceiveBtn.TextColor3 = Color3.fromRGB(240,240,240)
-local blackFlashStatus = Instance.new("TextLabel", blackFlashFrame)
-blackFlashStatus.Size = UDim2.new(1, -20, 0, 54)
-blackFlashStatus.Position = UDim2.new(0, 10, 0, 182)
-blackFlashStatus.BackgroundTransparency = 1
-blackFlashStatus.Text = "Status: Idle"
-blackFlashStatus.Font = Enum.Font.Gotham
-blackFlashStatus.TextSize = 13
-blackFlashStatus.TextColor3 = Color3.fromRGB(255, 205, 205)
-blackFlashStatus.TextWrapped = true
-blackFlashStatus.TextYAlignment = Enum.TextYAlignment.Top
-blackFlashStatus.TextXAlignment = Enum.TextXAlignment.Left
+
 getgenv().LuexUI = {
     Screen = screen,
     Main = main,
     Logo = logo,
     MinBtn = minBtn,
+    CombatTabBtn = btnCombatTab,
+    SafetyTabBtn = btnSafetyTab,
+    SettingsTabBtn = btnSettingsTab,
+    CombatTab = combatTab,
+    SafetyTab = safetyTab,
+    SettingsTab = settingsTab,
     AutoBtn = btnAuto,
     AutoSelectedBtn = btnAutoSelected,
     MultiSelectedBtn = btnMultiSelected,
     ChangePlayerBtn = btnChangePlayer,
     BlacklistBtn = btnBlacklist,
     PositionModeBtn = btnPositionMode,
-    StealthBtn = btnStealth,
     SpeedBoostBtn = btnSpeedBoost,
     PredictBtn = btnPredict,
     ServerHopBtn = btnServerHop,
     SafeZoneBtn = btnSafeZone,
-    BlackFlashBtn = btnBlackFlash,
+    VoidCheckBtn = btnVoidCheck,
     PlayerList = playerListContainer,
     RefreshBtn = refreshBtn,
     AutoRefreshToggle = autoRefreshToggle,
     BlacklistFrame = blacklistFrame,
     BlacklistPlayerList = blacklistPlayerList,
-    BlackFlashFrame = blackFlashFrame,
-    BlackFlashTargetBox = blackFlashTargetBox,
-    BlackFlashSendBtn = blackFlashSendBtn,
-    BlackFlashAcceptBtn = blackFlashAcceptBtn,
-    BlackFlashRejectBtn = blackFlashRejectBtn,
-    BlackFlashStartBtn = blackFlashStartBtn,
-    BlackFlashReadyReceiveBtn = blackFlashReadyReceiveBtn,
-    BlackFlashStatus = blackFlashStatus,
-    BlackFlashCloseBtn = blackFlashCloseBtn,
+    SafetyStatusBox = safetyStatusBox,
+    UpdateBox = updateBox,
     Glow = glowFrame,
     Crack = crackContainer
 }
+
 local langBtn = Instance.new("TextButton", topBar)
 langBtn.Name = "LangToggle"
 langBtn.Size = UDim2.new(0, 50, 0, 24)
@@ -594,7 +583,9 @@ langBtn.Text = "ENG"
 langBtn.Font = Enum.Font.GothamBold
 langBtn.TextSize = 12
 langBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
-langBtn.ZIndex = 4
+langBtn.Active = true
+langBtn.ZIndex = 35
+
 local dragging = false
 local dragStart, startPos
 local function updateDrag(input)
@@ -607,7 +598,6 @@ local function updateDrag(input)
             startPos.Y.Offset + delta.Y
         )
         Config.UIPosition = {main.Position.X.Scale, main.Position.X.Offset, main.Position.Y.Scale, main.Position.Y.Offset}
-        SaveConfig()
     end
 end
 topBar.InputBegan:Connect(function(input)
@@ -633,17 +623,47 @@ minBtn.MouseButton1Click:Connect(function()
     if minimized then
         TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,550,0,380)}):Play()
         content.Visible = true
+        tabBar.Visible = true
         logo.TextTransparency = 0
         langBtn.Visible = true
     else
         local targetSize = UDim2.new(0,150,0,46)
         TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize}):Play()
         content.Visible = false
+        tabBar.Visible = false
         logo.TextTransparency = 0
         langBtn.Visible = false
     end
     minimized = not minimized
 end)
+
+local activeTab = "Combat"
+local refreshPlayerList
+local updateSafetyStatus
+local function setActiveTab(tabName)
+    activeTab = tabName
+    combatTab.Visible = tabName == "Combat"
+    safetyTab.Visible = tabName == "Safety"
+    settingsTab.Visible = tabName == "Settings"
+    btnCombatTab.BackgroundColor3 = combatTab.Visible and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(35, 6, 6)
+    btnSafetyTab.BackgroundColor3 = safetyTab.Visible and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(35, 6, 6)
+    btnSettingsTab.BackgroundColor3 = settingsTab.Visible and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(35, 6, 6)
+    if tabName == "Combat" and refreshPlayerList then
+        refreshPlayerList()
+    elseif tabName == "Safety" and updateSafetyStatus then
+        updateSafetyStatus()
+    end
+end
+btnCombatTab.MouseButton1Click:Connect(function()
+    setActiveTab("Combat")
+end)
+btnSafetyTab.MouseButton1Click:Connect(function()
+    setActiveTab("Safety")
+end)
+btnSettingsTab.MouseButton1Click:Connect(function()
+    setActiveTab("Settings")
+end)
+
 local UI = getgenv().LuexUI
 local autoOn = Config.AutoOn
 local autoSelectedOn = Config.AutoSelectedOn
@@ -651,12 +671,14 @@ local multiOn = Config.MultiOn
 local predictOn = Config.PredictOn
 local serverHopOn = Config.ServerHopOn
 local safeZoneOn = Config.SafeZoneOn
+local voidCheckOn = Config.VoidCheckOn
 local autoRefreshOn = Config.AutoRefreshOn
 local positionMode = Config.PositionMode
-local stealthOn = Config.StealthOn
 local speedBoostOn = Config.SpeedBoostOn
 local currentTarget = nil
 local highlightGui = nil
+local highlightTarget = nil
+local highlightText = nil
 local lastAttack = 0
 local lastFace = 0
 local lastPositionUpdate = 0
@@ -678,28 +700,24 @@ local targetCheckRate = 0.1
 local lastSwitchNotify = 0
 local switchNotifyCooldown = 2
 local safePlatform = nil
-local wasAutoKillOn = false
+local savedSafeZoneModes = {
+    auto = false,
+    selected = false,
+    multi = false
+}
 local safeZoneGui = nil
 local safeZoneNowBtn = nil
-local blackFlashApiBase = "https://serverluexreal.onrender.com"
-local blackFlash = {
-    inviteId = nil,
-    mode = nil,
-    partnerName = nil,
-    incomingFrom = nil,
-    incomingInviteId = nil,
-    receiveReady = false,
-    localReady = false,
-    partnerReady = false,
-    running = false,
-    lastPoll = 0,
-    ws = nil,
-    wsConnected = false,
-    wsUrl = nil,
-    lastWsConnectTry = 0,
-    followToken = 0
-}
+local voidSpawnCFrame = nil
+local voidSafeHeight = nil
+local lastVoidSafeCFrame = nil
+local lastVoidNotify = 0
+local voidDangerTargets = {}
+local voidDangerCooldown = 6
+-- Tăng ngưỡng anti-void sâu hơn (bạn có thể chỉnh 70-120)
+local voidWarnOffset = 60
+local voidRescueOffset = 80
 local removeSafePlatform
+local manualSafeMode = false   -- cờ để biết platform tạo thủ công
 local complimentDialog = nil
 local complimentVisible = false
 local mainReady = true
@@ -707,21 +725,34 @@ local mainStarted = false
 local toolList = {
     "Normal Punch", "Consecutive Punches", "Shove", "Uppercut", "Serious Punch",
     "Flowing Water", "Lethal Whirlwind Stream", "Hunter's Grasp", "Prey's Peril",
-    "Water Stream Cutting Fist", "The Final Hunt", "Rock Splitting Fist", "Crushed Rock", "Machine Gun Blows",
-    "Ignition Burst", "Blitz Shot", "Jet Dive", "Thunder Kick", "Speedblitz Dropkick", "Flamewave Cannon",
-    "Incinerate", "Flash Strike", "Whirlwind Kick", "Scatter", "Explosive Shuriken", "Twinblade Rush", "Straight On",
-    "Carnage", "Fourfold Flashstrike", "Homerun", "Beatdown", "Grand Slam", "Foul Ball", "Savage Tornado",
-    "Brutual Beatdown", "Strength Difference", "Death Blow", "Quick Slice", "Atmos Cleave", "Pinpoint Cut",
-    "Split Second Counter", "Sunset", "Solar Cleave", "Sunrise", "Atomic Slash", "Crushing Pull", "Windstorm Fury",
-    "Stone Coffin", "Expulsive Push", "Cosmic Strike", "Psychic Ricochet", "Terrible Tornado", "Sky Snatcher",
-    "Bullet Barrage", "Vanishing Kick", "Head First", "Grand Fissure", "Twin Fangs",
-    "Earth Splitting Strike", "Last Breath"
+    "Water Stream Cutting Fist", "The Final Hunt", "Rock Splitting Fist", "Crushed Rock",
+    "Machine Gun Blows", "Ignition Burst", "Blitz Shot", "Jet Dive",
+    "Thunder Kick", "Speedblitz Dropkick", "Flamewave Cannon", "Incinerate",
+    "Flash Strike", "Whirlwind Kick", "Scatter", "Explosive Shuriken",
+    "Twinblade Rush", "Straight On", "Carnage", "Fourfold Flashstrike",
+    "Homerun", "Beatdown", "Grand Slam", "Foul Ball",
+    "Savage Tornado", "Brutual Beatdown", "Strength Difference", "Death Blow",
+    "Quick Slice", "Atmos Cleave", "Pinpoint Cut", "Split Second Counter",
+    "Sunset", "Solar Cleave", "Sunrise", "Atomic Slash",
+    "Crushing Pull", "Windstorm Fury", "Stone Coffin", "Expulsive Push",
+    "Cosmic Strike", "Psychic Ricochet", "Terrible Tornado", "Sky Snatcher",
+    "Bullet Barrage", "Vanishing Kick", "Head First", "Grand Fissure",
+    "Twin Fangs", "Earth Splitting Strike", "Last Breath",
+    "Weboom", "Plasma Cannon", "Trinity Tear", "Twin Burst",
+    "Photon Edge", "Photon Dive", "Conquest", "Missiles",
+    "Railgun", "Tactical Storm",
+    "Grave Maker", "Blast Breaker", "Point Blank", "Cross Fire"
 }
+
 local playerButtons = {}
 local blacklistButtons = {}
 local selectedBlacklistPlayers = {}
 local applyLang
 local startMain
+local teleportToPosition
+local faceTargetStep
+local spamAttack
+
 -- Blacklist Functions
 local function isBlacklisted(player)
     return table.find(blacklistedPlayers, player.Name) ~= nil
@@ -731,7 +762,6 @@ local function toggleBlacklist(player)
         notify("❌ Cannot modify " .. PROTECTED_USER .. " - Protected user!", 2)
         return
     end
-   
     local index = table.find(blacklistedPlayers, player.Name)
     if index then
         table.remove(blacklistedPlayers, index)
@@ -739,21 +769,16 @@ local function toggleBlacklist(player)
     else
         table.insert(blacklistedPlayers, player.Name)
         notify("🛡️ Added to blacklist: " .. player.Name, 1.5)
-       
-        -- Remove from selected targets if blacklisted
         local selectedIndex = table.find(selectedTargets, player)
         if selectedIndex then
             table.remove(selectedTargets, selectedIndex)
             notify("Removed from selected targets", 1)
         end
-       
-        -- Clear current target if it's the blacklisted player
         if currentTarget == player then
             currentTarget = nil
             clearHighlight()
         end
     end
-   
     Config.BlacklistedPlayers = blacklistedPlayers
     SaveConfig()
     applyLang()
@@ -762,16 +787,15 @@ local function updateBlacklistButton(button, player)
     local isBlack = isBlacklisted(player)
     local isProtected = player.Name == PROTECTED_USER
     local isSelected = selectedBlacklistPlayers[player] ~= nil
-   
     local targetBg = isProtected and Color3.fromRGB(100, 20, 20) or (isSelected and Color3.fromRGB(80, 5, 5) or (isBlack and Color3.fromRGB(60, 10, 10) or Color3.fromRGB(30, 8, 8)))
     local targetTextColor = isProtected and Color3.fromRGB(255, 200, 100) or (isSelected and Color3.fromRGB(255, 50, 50) or (isBlack and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(240, 240, 240)))
     local icon = isProtected and "🔒 " or (isBlack and "🛡️ " or "")
     local checkmark = isSelected and " ✓" or ""
-   
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {BackgroundColor3 = targetBg}):Play()
     TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {TextColor3 = targetTextColor}):Play()
     button.Text = icon .. player.Name .. checkmark
 end
+
 local activeNotifications = {}
 local maxNotifications = 3
 local notificationQueue = {}
@@ -875,581 +899,6 @@ local function trimText(value)
     if type(value) ~= "string" then return "" end
     return (value:gsub("^%s+", ""):gsub("%s+$", ""))
 end
-local function getRequestFn()
-    if syn and syn.request then return syn.request end
-    if http_request then return http_request end
-    if request then return request end
-    return nil
-end
-local function getWsConnectFn()
-    if websocket and websocket.connect then return websocket.connect end
-    if WebSocket and WebSocket.connect then return WebSocket.connect end
-    if syn and syn.websocket and syn.websocket.connect then return syn.websocket.connect end
-    return nil
-end
-local function buildBlackFlashWsUrl()
-    local url = blackFlashApiBase
-    if string.sub(url, 1, 8) == "https://" then
-        return "wss://" .. string.sub(url, 9) .. "/blackflash-ws"
-    end
-    if string.sub(url, 1, 7) == "http://" then
-        return "ws://" .. string.sub(url, 8) .. "/blackflash-ws"
-    end
-    return "wss://" .. url .. "/blackflash-ws"
-end
-local function blackFlashWsSend(payload)
-    if not blackFlash.ws or not blackFlash.wsConnected then
-        return false
-    end
-    local ok = pcall(function()
-        blackFlash.ws:Send(HttpService:JSONEncode(payload))
-    end)
-    return ok
-end
-local function getCharacterRemote()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-    return character:FindFirstChild("Communicate")
-end
-local function callBlackFlashApi(method, path, payload)
-    local req = getRequestFn()
-    if not req then
-        return false, nil, nil, "request api not found"
-    end
-    local body = payload and HttpService:JSONEncode(payload) or nil
-    local ok, response = pcall(function()
-        return req({
-            Url = blackFlashApiBase .. path,
-            Method = method,
-            Headers = {["Content-Type"] = "application/json"},
-            Body = body
-        })
-    end)
-    if not ok or not response then
-        return false, nil, nil, "request failed"
-    end
-    local status = tonumber(response.StatusCode) or 0
-    local decoded = nil
-    if response.Body and response.Body ~= "" then
-        pcall(function()
-            decoded = HttpService:JSONDecode(response.Body)
-        end)
-    end
-    if status < 200 or status >= 300 then
-        return false, status, decoded, response.Body
-    end
-    return true, status, decoded, response.Body
-end
-local function setBlackFlashStatus(text)
-    if UI.BlackFlashStatus then
-        UI.BlackFlashStatus.Text = "Status: " .. text
-    end
-end
-local function updateReadyReceiveButton()
-    if not UI.BlackFlashReadyReceiveBtn then return end
-    local isOn = blackFlash.receiveReady
-    UI.BlackFlashReadyReceiveBtn.Text = "Ready Receive: " .. (isOn and "ON" or "OFF")
-    UI.BlackFlashReadyReceiveBtn.BackgroundColor3 = isOn and Color3.fromRGB(20, 70, 20) or Color3.fromRGB(35, 6, 6)
-end
-local function getBlackFlashPollInterval()
-    if blackFlash.receiveReady then
-        return 0.01
-    end
-    if blackFlash.incomingInviteId then
-        return 0.01
-    end
-    if blackFlash.inviteId and not blackFlash.running then
-        return 0.01
-    end
-    return 0.25
-end
-local function resetBlackFlashState(reason)
-    blackFlash.inviteId = nil
-    blackFlash.mode = nil
-    blackFlash.partnerName = nil
-    blackFlash.incomingFrom = nil
-    blackFlash.incomingInviteId = nil
-    blackFlash.localReady = false
-    blackFlash.partnerReady = false
-    blackFlash.running = false
-    blackFlash.followToken = blackFlash.followToken + 1
-    UI.BlackFlashAcceptBtn.Visible = false
-    UI.BlackFlashRejectBtn.Visible = false
-    UI.BlackFlashStartBtn.Visible = false
-    updateReadyReceiveButton()
-    if reason and reason ~= "" then
-        setBlackFlashStatus(reason)
-    else
-        setBlackFlashStatus("Idle")
-    end
-end
-local function setAutoCombatOffForBlackFlash()
-    autoOn = false
-    autoSelectedOn = false
-    multiOn = false
-    Config.AutoOn = false
-    Config.AutoSelectedOn = false
-    Config.MultiOn = false
-    SaveConfig()
-    applyLang()
-end
-local function pressLeftClickOnce()
-    local remote = getCharacterRemote()
-    if not remote then return false end
-    remote:FireServer({
-        Goal = "LeftClick",
-        Mobile = true
-    })
-    return true
-end
-local function holdFFor(duration)
-    local remote = getCharacterRemote()
-    if not remote then return false end
-    remote:FireServer({
-        Goal = "KeyPress",
-        Key = Enum.KeyCode.F
-    })
-    task.wait(duration or 0.2)
-    local args = {
-        {
-            Goal = "KeyRelease",
-            Key = Enum.KeyCode.F
-        }
-    }
-    remote:FireServer(unpack(args))
-    return true
-end
-local function getPlayerByName(playerName)
-    if not playerName or playerName == "" then return nil end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name == playerName then
-            return player
-        end
-    end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if string.lower(player.Name):find(string.lower(playerName), 1, true) then
-            return player
-        end
-    end
-    return nil
-end
-local function isPlayerAlive(player)
-    if not player or not player.Character then return false end
-    local humanoid = player.Character:FindFirstChild("Humanoid")
-    return humanoid and humanoid.Health > 0
-end
-local function placeBehind(targetPlayer)
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local targetRoot = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot or not targetRoot then return end
-    local behindPos = targetRoot.Position - (targetRoot.CFrame.LookVector * 3.3)
-    localRoot.CFrame = CFrame.lookAt(behindPos, targetRoot.Position)
-end
-local function placeFront(targetPlayer)
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local targetRoot = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot or not targetRoot then return end
-    local frontPos = targetRoot.Position + (targetRoot.CFrame.LookVector * 3.3)
-    localRoot.CFrame = CFrame.lookAt(frontPos, targetRoot.Position)
-end
-local function startBlackFlashFollowLoop(followMode)
-    blackFlash.followToken = blackFlash.followToken + 1
-    local token = blackFlash.followToken
-    spawn(function()
-        while blackFlash.running and token == blackFlash.followToken do
-            local partner = getPlayerByName(blackFlash.partnerName)
-            if partner and isPlayerAlive(partner) then
-                if followMode == "behind" then
-                    placeBehind(partner)
-                else
-                    placeFront(partner)
-                end
-            end
-            RunService.Heartbeat:Wait()
-        end
-    end)
-end
-local function runSenderBlackFlashLoop()
-    if blackFlash.running then return end
-    blackFlash.running = true
-    startBlackFlashFollowLoop("behind")
-    setAutoCombatOffForBlackFlash()
-    notify("BlackFlash Sender loop started", 1.5)
-    spawn(function()
-        while blackFlash.running do
-            local partner = getPlayerByName(blackFlash.partnerName)
-            if not partner or not isPlayerAlive(partner) then
-                blackFlash.running = false
-                resetBlackFlashState("Target dead or left server")
-                notify("BlackFlash stopped: target invalid/dead", 2)
-                local sentWs = blackFlashWsSend({
-                    type = "end",
-                    inviteId = blackFlash.inviteId,
-                    player = LocalPlayer.Name,
-                    serverId = game.JobId
-                })
-                if not sentWs then
-                    callBlackFlashApi("POST", "/api/blackflash/end", {
-                        inviteId = blackFlash.inviteId,
-                        player = LocalPlayer.Name,
-                        serverId = game.JobId
-                    })
-                end
-                break
-            end
-            placeBehind(partner)
-            task.wait(0.3)
-            pressLeftClickOnce()
-            task.wait(0.05)
-            holdFFor(0.2)
-            task.wait(0.45)
-        end
-    end)
-end
-local function runReceiverBlackFlashLoop()
-    if blackFlash.running then return end
-    blackFlash.running = true
-    startBlackFlashFollowLoop("front")
-    notify("BlackFlash Receiver loop started", 1.5)
-    spawn(function()
-        while blackFlash.running do
-            local partner = getPlayerByName(blackFlash.partnerName)
-            if not partner or not isPlayerAlive(partner) then
-                blackFlash.running = false
-                resetBlackFlashState("Partner dead or left server")
-                notify("BlackFlash stopped: partner invalid/dead", 2)
-                local sentWs = blackFlashWsSend({
-                    type = "end",
-                    inviteId = blackFlash.inviteId,
-                    player = LocalPlayer.Name,
-                    serverId = game.JobId
-                })
-                if not sentWs then
-                    callBlackFlashApi("POST", "/api/blackflash/end", {
-                        inviteId = blackFlash.inviteId,
-                        player = LocalPlayer.Name,
-                        serverId = game.JobId
-                    })
-                end
-                break
-            end
-            placeFront(partner)
-            task.wait(0.35)
-            holdFFor(0.2)
-            task.wait(0.25)
-            pressLeftClickOnce()
-            task.wait(0.4)
-        end
-    end)
-end
-local function syncBlackFlashUiState()
-    local hasIncoming = blackFlash.incomingInviteId ~= nil
-    UI.BlackFlashAcceptBtn.Visible = hasIncoming
-    UI.BlackFlashRejectBtn.Visible = hasIncoming
-    UI.BlackFlashStartBtn.Visible = blackFlash.inviteId ~= nil and blackFlash.mode ~= nil
-    updateReadyReceiveButton()
-end
-local function handleBlackFlashWsMessage(decoded)
-    if type(decoded) ~= "table" then return end
-    local msgType = decoded.type
-    if msgType == "connected" then
-        setBlackFlashStatus("WebSocket connected")
-        return
-    end
-    if msgType == "registered" then
-        blackFlash.wsConnected = true
-        return
-    end
-    if msgType == "invite_sent" then
-        blackFlash.inviteId = decoded.inviteId
-        blackFlash.mode = "sender"
-        blackFlash.partnerName = decoded.receiver
-        blackFlash.localReady = false
-        blackFlash.partnerReady = false
-        setBlackFlashStatus("Invite sent to " .. tostring(decoded.receiver))
-        syncBlackFlashUiState()
-        return
-    end
-    if msgType == "incoming_invite" then
-        if blackFlash.receiveReady and not blackFlash.inviteId then
-            blackFlash.incomingInviteId = decoded.inviteId
-            blackFlash.incomingFrom = decoded.sender
-            setBlackFlashStatus("Incoming invite from " .. tostring(decoded.sender))
-            syncBlackFlashUiState()
-        end
-        return
-    end
-    if msgType == "invite_accepted" then
-        if not blackFlash.inviteId then
-            blackFlash.inviteId = decoded.inviteId
-        end
-        if not blackFlash.partnerName then
-            if blackFlash.mode == "sender" then
-                blackFlash.partnerName = decoded.receiver
-            else
-                blackFlash.partnerName = decoded.sender
-            end
-        end
-        setBlackFlashStatus("Invite accepted. Waiting both Start...")
-        syncBlackFlashUiState()
-        return
-    end
-    if msgType == "invite_rejected" then
-        resetBlackFlashState("Invite rejected")
-        notify("Loi moi BlackFlash bi tu choi", 2)
-        return
-    end
-    if msgType == "ready_update" then
-        if decoded.inviteId == blackFlash.inviteId then
-            if blackFlash.mode == "sender" then
-                blackFlash.partnerReady = decoded.receiverReady and true or false
-            else
-                blackFlash.partnerReady = decoded.senderReady and true or false
-            end
-            if blackFlash.localReady and blackFlash.partnerReady then
-                setBlackFlashStatus("Both ready. Running combo...")
-            else
-                setBlackFlashStatus("Ready update. Waiting partner...")
-            end
-        end
-        return
-    end
-    if msgType == "session_started" then
-        if decoded.inviteId == blackFlash.inviteId and not blackFlash.running then
-            blackFlash.partnerReady = true
-            if blackFlash.mode == "sender" then
-                runSenderBlackFlashLoop()
-            elseif blackFlash.mode == "receiver" then
-                runReceiverBlackFlashLoop()
-            end
-        end
-        return
-    end
-    if msgType == "session_ended" then
-        if decoded.inviteId == blackFlash.inviteId then
-            resetBlackFlashState("Session ended")
-        end
-        return
-    end
-end
-local function connectBlackFlashWebSocket(force)
-    if blackFlash.wsConnected and blackFlash.ws and not force then
-        return true
-    end
-    if not force and tick() - blackFlash.lastWsConnectTry < 2 then
-        return false
-    end
-    blackFlash.lastWsConnectTry = tick()
-    local connectFn = getWsConnectFn()
-    if not connectFn then
-        return false
-    end
-    local url = buildBlackFlashWsUrl()
-    blackFlash.wsUrl = url
-    local ok, ws = pcall(function()
-        return connectFn(url)
-    end)
-    if not ok or not ws then
-        blackFlash.wsConnected = false
-        return false
-    end
-    blackFlash.ws = ws
-    blackFlash.wsConnected = true
-    local function onMessage(raw)
-        local decoded = nil
-        pcall(function()
-            decoded = HttpService:JSONDecode(raw)
-        end)
-        handleBlackFlashWsMessage(decoded)
-    end
-    local function onClose()
-        blackFlash.wsConnected = false
-        blackFlash.ws = nil
-    end
-    pcall(function()
-        ws.OnMessage:Connect(onMessage)
-    end)
-    pcall(function()
-        ws.OnClose:Connect(onClose)
-    end)
-    pcall(function()
-        ws.OnMessage = onMessage
-    end)
-    pcall(function()
-        ws.OnClose = onClose
-    end)
-    blackFlashWsSend({
-        type = "register",
-        player = LocalPlayer.Name,
-        serverId = game.JobId,
-        placeId = game.PlaceId
-    })
-    return true
-end
-local function sendBlackFlashInvite()
-    if #selectedTargets < 1 then
-        notify("Hay chon target ben phai truoc khi Send", 2)
-        return
-    end
-    local targetPlayer = selectedTargets[1]
-    if not targetPlayer or targetPlayer == LocalPlayer then
-        notify("Target duoc chon khong hop le", 2)
-        return
-    end
-    if not table.find(Players:GetPlayers(), targetPlayer) then
-        notify("Target da roi server", 2)
-        return
-    end
-    if isBlacklisted(targetPlayer) then
-        notify("Target dang nam trong blacklist", 2)
-        return
-    end
-    connectBlackFlashWebSocket(false)
-    local wsOk = blackFlashWsSend({
-        type = "invite",
-        sender = LocalPlayer.Name,
-        receiver = targetPlayer.Name,
-        serverId = game.JobId,
-        placeId = game.PlaceId
-    })
-    if wsOk then
-        setBlackFlashStatus("Sending invite...")
-        notify("Dang gui loi moi BlackFlash...", 1.5)
-        return
-    end
-    local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/invite", {
-        sender = LocalPlayer.Name,
-        receiver = targetPlayer.Name,
-        serverId = game.JobId,
-        placeId = game.PlaceId
-    })
-    if not ok then
-        notify("Gui loi moi that bai (kiem tra api/ws)", 2.5)
-        return
-    end
-    local payload = data and (data.data or data) or {}
-    blackFlash.inviteId = payload.inviteId or payload.id
-    blackFlash.mode = "sender"
-    blackFlash.partnerName = targetPlayer.Name
-    blackFlash.localReady = false
-    blackFlash.partnerReady = false
-    syncBlackFlashUiState()
-    setBlackFlashStatus("Invite sent to " .. targetPlayer.Name)
-    notify("Da gui loi moi BlackFlash den " .. targetPlayer.Name, 2)
-end
-local function respondBlackFlashInvite(accepted)
-    if not blackFlash.incomingInviteId then
-        notify("Khong co loi moi nao", 2)
-        return
-    end
-    connectBlackFlashWebSocket(false)
-    local wsOk = blackFlashWsSend({
-        type = "respond",
-        inviteId = blackFlash.incomingInviteId,
-        player = LocalPlayer.Name,
-        accepted = accepted and true or false,
-        serverId = game.JobId
-    })
-    if (not wsOk) then
-        local ok = callBlackFlashApi("POST", "/api/blackflash/respond", {
-            inviteId = blackFlash.incomingInviteId,
-            player = LocalPlayer.Name,
-            accepted = accepted and true or false,
-            serverId = game.JobId
-        })
-        if not ok then
-            notify("Phan hoi loi moi that bai", 2)
-            return
-        end
-    end
-    if accepted then
-        blackFlash.inviteId = blackFlash.incomingInviteId
-        blackFlash.mode = "receiver"
-        blackFlash.partnerName = blackFlash.incomingFrom
-        blackFlash.localReady = false
-        blackFlash.partnerReady = false
-        blackFlash.lastPoll = 0
-        setBlackFlashStatus("Accepted invite. Waiting partner press Start...")
-        notify("Da dong y loi moi BlackFlash", 2)
-    else
-        setBlackFlashStatus("Invite rejected")
-        notify("Da tu choi loi moi", 1.5)
-    end
-    blackFlash.incomingInviteId = nil
-    blackFlash.incomingFrom = nil
-    syncBlackFlashUiState()
-end
-local function setBlackFlashReady()
-    if not blackFlash.inviteId or not blackFlash.mode then
-        notify("Chua co room BlackFlash", 2)
-        return
-    end
-    connectBlackFlashWebSocket(false)
-    local wsOk = blackFlashWsSend({
-        type = "start",
-        inviteId = blackFlash.inviteId,
-        player = LocalPlayer.Name,
-        role = blackFlash.mode,
-        ready = true,
-        serverId = game.JobId
-    })
-    if not wsOk then
-        local ok = callBlackFlashApi("POST", "/api/blackflash/start", {
-            inviteId = blackFlash.inviteId,
-            player = LocalPlayer.Name,
-            role = blackFlash.mode,
-            ready = true,
-            serverId = game.JobId
-        })
-        if not ok then
-            notify("Start that bai (api/ws)", 2)
-            return
-        end
-    end
-    blackFlash.localReady = true
-    blackFlash.lastPoll = 0
-    setBlackFlashStatus("You are ready. Waiting partner...")
-    notify("Da Start. Dang doi doi tac...", 2)
-end
-local function pollBlackFlashState()
-    if blackFlash.wsConnected then
-        return
-    end
-    if tick() - blackFlash.lastPoll < getBlackFlashPollInterval() then return end
-    blackFlash.lastPoll = tick()
-    local ok, _, data = callBlackFlashApi("POST", "/api/blackflash/poll", {
-        player = LocalPlayer.Name,
-        serverId = game.JobId,
-        placeId = game.PlaceId
-    })
-    if not ok then
-        return
-    end
-    local payload = data and (data.data or data) or {}
-    local incoming = payload.incomingInvite or payload.incoming or nil
-    local session = payload.session or nil
-    if incoming and incoming.inviteId and not blackFlash.inviteId and blackFlash.receiveReady then
-        blackFlash.incomingInviteId = incoming.inviteId
-        blackFlash.incomingFrom = incoming.sender
-        setBlackFlashStatus("Incoming invite from " .. tostring(incoming.sender))
-        syncBlackFlashUiState()
-    end
-    if session and session.inviteId and blackFlash.inviteId and session.inviteId == blackFlash.inviteId then
-        blackFlash.partnerReady = session.partnerReady and true or false
-        local remoteAccepted = session.accepted == true or session.status == "accepted" or session.status == "started"
-        if not remoteAccepted then
-            return
-        end
-        if blackFlash.localReady and blackFlash.partnerReady and not blackFlash.running then
-            setBlackFlashStatus("Both ready. Running combo...")
-            if blackFlash.mode == "sender" then
-                runSenderBlackFlashLoop()
-            elseif blackFlash.mode == "receiver" then
-                runReceiverBlackFlashLoop()
-            end
-        end
-    end
-end
 local function isSelected(player)
     for _, p in ipairs(selectedTargets) do
         if p == player then return true end
@@ -1460,6 +909,8 @@ local function clearHighlight()
     pcall(function()
         if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
         highlightGui = nil
+        highlightTarget = nil
+        highlightText = nil
     end)
 end
 local function updateButtonColors(button, isSel, playerName)
@@ -1479,12 +930,15 @@ local function updateButtonColors(button, isSel, playerName)
             neonStroke.Thickness = 2.5
             existingStroke = neonStroke
         end
-        spawn(function()
-            while existingStroke and existingStroke.Parent do
-                TweenService:Create(existingStroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.7}):Play()
-                wait(0.8)
-            end
-        end)
+        if not existingStroke:GetAttribute("PulseRunning") then
+            existingStroke:SetAttribute("PulseRunning", true)
+            spawn(function()
+                while existingStroke and existingStroke.Parent do
+                    TweenService:Create(existingStroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.7}):Play()
+                    wait(0.8)
+                end
+            end)
+        end
     else
         if existingStroke then
             TweenService:Create(existingStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 1}):Play()
@@ -1512,7 +966,6 @@ local function toggleSelect(player)
         notify("❌ " .. player.Name .. " is blacklisted! Cannot select.", 2)
         return
     end
-   
     if not player.Character or not player.Character:FindFirstChild("Humanoid") or player.Character:FindFirstChild("Humanoid").Health <= 0 then
         notify(player.Name .. " is not a valid target", 2)
         return
@@ -1524,7 +977,6 @@ local function toggleSelect(player)
             break
         end
     end
-    local oldCount = #selectedTargets
     if foundIndex then
         table.remove(selectedTargets, foundIndex)
         notify("Deselected: " .. player.Name .. " (" .. #selectedTargets .. " left)", 1.5)
@@ -1532,7 +984,7 @@ local function toggleSelect(player)
             if foundIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
             elseif foundIndex == currentMultiIndex then
-                currentMultiIndex = math.fmod(currentMultiIndex - 1, #selectedTargets) + 1
+                currentMultiIndex = (#selectedTargets > 0) and (math.fmod(currentMultiIndex - 1, #selectedTargets) + 1) or 1
                 lastTargetCheck = 0
             end
             if currentMultiIndex > #selectedTargets then currentMultiIndex = 1 end
@@ -1575,20 +1027,9 @@ local function updateSelectedBtnsText()
 end
 local function makeHighlight(player, multiIndex)
     pcall(function()
-        if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
         if not player or not player.Character then return end
         local root = player.Character:FindFirstChild("HumanoidRootPart") or player.Character:FindFirstChildWhichIsA("BasePart")
         if not root then return end
-        local bg = Instance.new("BillboardGui")
-        bg.Name = "LuexTargetHighlight"
-        bg.Parent = player.Character
-        bg.Adornee = root
-        bg.Size = UDim2.new(0,140,0,48)
-        bg.AlwaysOnTop = true
-        local label = Instance.new("TextLabel", bg)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 0.25
-        label.BackgroundColor3 = Color3.fromRGB(40,5,5)
         local modeText
         if multiOn and multiIndex then
             modeText = " [MULTI " .. multiIndex .. "/" .. #selectedTargets .. " " .. positionMode .. "]"
@@ -1599,20 +1040,39 @@ local function makeHighlight(player, multiIndex)
         else
             modeText = " [" .. positionMode .. "]"
         end
-        modeText = modeText .. (stealthOn and " [STEALTH]" or "")
-        label.Text = "TARGET: "..player.Name..modeText
+        local targetText = "TARGET: "..player.Name..modeText
+        if highlightGui and highlightGui.Parent and highlightTarget == player and highlightText == targetText then
+            highlightGui.Adornee = root
+            return
+        end
+        if highlightGui and highlightGui.Parent then highlightGui:Destroy() end
+        local bg = Instance.new("BillboardGui")
+        bg.Name = "LuexTargetHighlight"
+        bg.Parent = player.Character
+        bg.Adornee = root
+        bg.Size = UDim2.new(0,140,0,48)
+        bg.AlwaysOnTop = true
+        local label = Instance.new("TextLabel", bg)
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 0.25
+        label.BackgroundColor3 = Color3.fromRGB(40,5,5)
+        label.Text = targetText
         label.TextColor3 = Color3.fromRGB(255,200,200)
         label.Font = Enum.Font.GothamBold
         label.TextSize = 14
         label.TextStrokeTransparency = 0.6
         highlightGui = bg
+        highlightTarget = player
+        highlightText = targetText
     end)
 end
+local isVoidDangerTarget
 local function chooseRandom()
     local pls = {}
     for _,p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and
             not isBlacklisted(p) and
+            not (isVoidDangerTarget and isVoidDangerTarget(p)) and
             p.Character and
             p.Character:FindFirstChild("Humanoid") and
             p.Character:FindFirstChild("Humanoid").Health > 0 then
@@ -1628,6 +1088,7 @@ local function chooseWeakest()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and
             not isBlacklisted(p) and
+            not (isVoidDangerTarget and isVoidDangerTarget(p)) and
             p.Character and
             p.Character:FindFirstChild("Humanoid") and
             p.Character.Humanoid.Health > 0 then
@@ -1640,8 +1101,81 @@ local function chooseWeakest()
     end
     return weakest
 end
+local function rememberVoidSafePoint(humanoidRootPart, forceSpawn)
+    if not humanoidRootPart then return end
+    if forceSpawn or not voidSpawnCFrame then
+        voidSpawnCFrame = humanoidRootPart.CFrame
+        voidSafeHeight = humanoidRootPart.Position.Y
+    end
+    local baseY = voidSafeHeight or humanoidRootPart.Position.Y
+    if humanoidRootPart.Position.Y >= baseY - 8 then
+        lastVoidSafeCFrame = humanoidRootPart.CFrame
+    end
+end
+isVoidDangerTarget = function(player)
+    local expires = voidDangerTargets[player]
+    if expires and expires > tick() then
+        return true
+    end
+    voidDangerTargets[player] = nil
+    local baseY = voidSafeHeight
+    local root = player and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    return baseY and root and root.Position.Y < (baseY - voidWarnOffset)
+end
+local function isValidVoidReplacement(player, skipPlayer)
+    if not player or player == LocalPlayer or player == skipPlayer or isBlacklisted(player) or isVoidDangerTarget(player) then
+        return false
+    end
+    local character = player.Character
+    local humanoid = character and character:FindFirstChild("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    return humanoid and humanoid.Health > 0 and root ~= nil
+end
+local function switchVoidTarget(skipPlayer)
+    if multiOn and #selectedTargets >= 2 then
+        for i = 1, #selectedTargets do
+            local index = math.fmod(currentMultiIndex + i - 1, #selectedTargets) + 1
+            local candidate = selectedTargets[index]
+            if isValidVoidReplacement(candidate, skipPlayer) then
+                currentMultiIndex = index
+                currentTarget = candidate
+                lastTargetCheck = tick()
+                makeHighlight(currentTarget, currentMultiIndex)
+                notify("Void target skipped. Switched to: " .. currentTarget.Name, 2)
+                return true
+            end
+        end
+        return false
+    end
+    local weakest = nil
+    local lowestHp = math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if isValidVoidReplacement(player, skipPlayer) then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if humanoid.Health < lowestHp then
+                lowestHp = humanoid.Health
+                weakest = player
+            end
+        end
+    end
+    if weakest then
+        currentTarget = weakest
+        lastTargetCheck = 0
+        makeHighlight(currentTarget)
+        notify("Void target skipped. Switched to: " .. currentTarget.Name, 2)
+        return true
+    end
+    return false
+end
 local lang = "ENG"
 local LANG_FILE = "luex/laun.json"
+local UPDATE_FILE = "luex/updates.json"
+local UPDATE_VERSION = "v3.3-tabs-safety"
+local UPDATE_NOTES = {
+    "Added Combat/Safety/Settings tabs",
+    "Added smart Void Check with safe height",
+    "Added update notification history"
+}
 local LANG_TEXT = {
     ENG = {
         auto = "Auto Kill Random: ",
@@ -1650,12 +1184,11 @@ local LANG_TEXT = {
         change = "Change Player",
         blacklist = "🛡️ Blacklist (%d) ✓",
         pos = "Position Mode: ",
-        stealth = "Stealth Mode: ",
         speed = "Speed Boost: ",
         predict = "Predict Direction: ",
         hop = "Auto Server Hop: ",
         safe = "Auto Safe Zone: ",
-        blackflash = "BlackFlash 2P",
+        void = "Void Check: ",
         safeNow = "SAFEZONE NOW",
         refresh = "🔄 Refresh Players",
         autoRefresh = "Auto Refresh: ",
@@ -1671,12 +1204,11 @@ local LANG_TEXT = {
         change = "Đổi Người Chơi",
         blacklist = "🛡️ Blacklist (%d) ✓",
         pos = "Chế Độ Vị Trí: ",
-        stealth = "Tàng Hình: ",
         speed = "Tăng Tốc: ",
         predict = "Dự Đoán Hướng: ",
         hop = "Auto Đổi Server: ",
         safe = "Auto Safe Zone: ",
-        blackflash = "BlackFlash 2P",
+        void = "Check Void: ",
         safeNow = "SAFEZONE NGAY",
         refresh = "🔄 Làm Mới DS",
         autoRefresh = "Tự Động Làm Mới: ",
@@ -1705,6 +1237,66 @@ local function saveLang()
         local payload = HttpService:JSONEncode({lang = lang})
         pcall(function() writefile(LANG_FILE, payload) end)
     end
+end
+local function getRealTimestamp()
+    local ok, value = pcall(function()
+        return os.date("%Y-%m-%d %H:%M:%S")
+    end)
+    return (ok and value) or tostring(DateTime.now():ToUniversalTime())
+end
+local function loadUpdates()
+    if readfile and isfile and isfile(UPDATE_FILE) then
+        local ok, data = pcall(function() return readfile(UPDATE_FILE) end)
+        if ok and data and data ~= "" then
+            local okDecode, decoded = pcall(function()
+                return HttpService:JSONDecode(data)
+            end)
+            if okDecode and type(decoded) == "table" and type(decoded.entries) == "table" then
+                return decoded
+            end
+        end
+    end
+    return {entries = {}}
+end
+local function saveUpdates(data)
+    if writefile and makefolder then
+        pcall(function() makefolder("luex") end)
+        pcall(function() writefile(UPDATE_FILE, HttpService:JSONEncode(data)) end)
+    end
+end
+local function refreshUpdateBox(data)
+    if not updateBox then return end
+    local lines = {"Updates"}
+    for i = math.min(#data.entries, 5), 1, -1 do
+        local entry = data.entries[i]
+        table.insert(lines, tostring(entry.time or "?") .. " - " .. tostring(entry.title or "Update"))
+        if type(entry.notes) == "table" then
+            for _, note in ipairs(entry.notes) do
+                table.insert(lines, "  - " .. tostring(note))
+            end
+        end
+    end
+    updateBox.Text = table.concat(lines, "\n")
+end
+local function recordUpdateNotice()
+    local data = loadUpdates()
+    local alreadyRecorded = false
+    for _, entry in ipairs(data.entries) do
+        if entry.version == UPDATE_VERSION then
+            alreadyRecorded = true
+            break
+        end
+    end
+    if not alreadyRecorded then
+        table.insert(data.entries, {
+            version = UPDATE_VERSION,
+            title = "Luex UI/Safety update",
+            time = getRealTimestamp(),
+            notes = UPDATE_NOTES
+        })
+        saveUpdates(data)
+    end
+    refreshUpdateBox(data)
 end
 
 local COMPLIMENT_TARGET = "werop4543"
@@ -1845,6 +1437,7 @@ local function buildComplimentDialog()
             TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,550,0,380)}):Play()
         end
         if content then content.Visible = true end
+        if tabBar then tabBar.Visible = true end
         if langBtn then langBtn.Visible = true end
     end)
 
@@ -1882,8 +1475,10 @@ function showComplimentDialog()
     complimentVisible = true
     mainReady = false
     if content then content.Visible = false end
+    if tabBar then tabBar.Visible = false end
     buildComplimentDialog()
 end
+
 applyLang = function()
     local t = LANG_TEXT[lang] or LANG_TEXT.ENG
     btnAuto.Text = t.auto .. (autoOn and "ON" or "OFF")
@@ -1892,12 +1487,11 @@ applyLang = function()
     btnChangePlayer.Text = t.change
     btnBlacklist.Text = string.format(t.blacklist, #Config.BlacklistedPlayers)
     btnPositionMode.Text = t.pos .. positionMode
-    btnStealth.Text = t.stealth .. (stealthOn and "ON" or "OFF")
     btnSpeedBoost.Text = t.speed .. (speedBoostOn and "ON" or "OFF")
     btnPredict.Text = t.predict .. (predictOn and "ON" or "OFF")
     btnServerHop.Text = t.hop .. (serverHopOn and "ON" or "OFF")
     btnSafeZone.Text = t.safe .. (safeZoneOn and "ON" or "OFF")
-    btnBlackFlash.Text = t.blackflash
+    btnVoidCheck.Text = t.void .. (voidCheckOn and "ON" or "OFF")
     refreshBtn.Text = t.refresh
     autoRefreshToggle.Text = t.autoRefresh .. (autoRefreshOn and "ON" or "OFF")
     playerTitle.Text = t.playerTitle
@@ -1940,7 +1534,7 @@ local function predictTargetPosition(targetRoot)
     end
     return targetRoot.Position
 end
-local function teleportToPosition(targetRoot, hrp)
+teleportToPosition = function(targetRoot, hrp)
     if not currentTarget or isBlacklisted(currentTarget) then return end
     local targetPos = predictTargetPosition(targetRoot)
     local radius = 5
@@ -1959,37 +1553,6 @@ local function teleportToPosition(targetRoot, hrp)
         hrp.CFrame = CFrame.lookAt(newPos, targetPos)
     end
 end
-local function toggleStealth()
-    local char = LocalPlayer.Character
-    if not char then return end
-    if stealthOn then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = 0.7
-                part.CanCollide = false
-            elseif part:IsA("Decal") or part:IsA("Texture") then
-                part.Transparency = 0.7
-            end
-        end
-        if positionMode == "Under" then
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                hrp.CFrame = hrp.CFrame + Vector3.new(0, -3, 0)
-            end
-        end
-        notify("Stealth ON: Semi-transparent + No-Clip!", 2)
-    else
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = 0
-                part.CanCollide = true
-            elseif part:IsA("Decal") or part:IsA("Texture") then
-                part.Transparency = 0
-            end
-        end
-        notify("Stealth OFF", 1.5)
-    end
-end
 local function speedBoostStep()
     local char = LocalPlayer.Character
     if not char or not speedBoostOn then return end
@@ -1998,7 +1561,7 @@ local function speedBoostStep()
         humanoid.WalkSpeed = 50
     end
 end
-local function faceTargetStep()
+faceTargetStep = function()
     if not currentTarget or isBlacklisted(currentTarget) or not currentTarget.Character then return end
     local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
     local char = LocalPlayer.Character
@@ -2006,7 +1569,7 @@ local function faceTargetStep()
     if not targetRoot or not hrp then return end
     hrp.CFrame = CFrame.lookAt(hrp.Position, predictTargetPosition(targetRoot))
 end
-local function spamAttack()
+spamAttack = function()
     if not currentTarget or isBlacklisted(currentTarget) or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
     if not remote then return end
@@ -2017,7 +1580,7 @@ local function spamAttack()
     })
     local args = {
         {
-            Goal = "KeyRelease",
+            Goal = "KeyPress",
             Key = Enum.KeyCode.Q
         }
     }
@@ -2039,14 +1602,21 @@ local function spamAttack()
         end
     end
 end
--- Continue with remaining functions...
-local function createSafePlatform()
+
+-- Sửa hàm createSafePlatform để hỗ trợ manual
+local function createSafePlatform(manual)
     if safePlatform then return end
+    manualSafeMode = manual or false   -- ghi nhớ nếu tạo bằng tay
+
     local character = LocalPlayer.Character
     if not character then return end
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then return end
-    wasAutoKillOn = autoOn or autoSelectedOn or multiOn
+
+    savedSafeZoneModes.auto = autoOn
+    savedSafeZoneModes.selected = autoSelectedOn
+    savedSafeZoneModes.multi = multiOn
+
     autoOn = false
     autoSelectedOn = false
     multiOn = false
@@ -2055,6 +1625,7 @@ local function createSafePlatform()
     Config.MultiOn = false
     SaveConfig()
     applyLang()
+
     safePlatform = Instance.new("Part")
     safePlatform.Name = "LuexSafePlatform"
     safePlatform.Size = Vector3.new(1000, 1, 1000)
@@ -2064,8 +1635,101 @@ local function createSafePlatform()
     safePlatform.Transparency = 0.5
     safePlatform.Color = Color3.fromRGB(255, 0, 0)
     safePlatform.Parent = workspace
+
     humanoidRootPart.CFrame = safePlatform.CFrame + Vector3.new(0, 5, 0)
-    notify("Safe Zone activated! Teleported to safety.", 3)
+    if manual then
+        notify("Safe Zone manually activated! (Auto-removal disabled)", 3)
+    else
+        notify("Safe Zone activated! Teleported to safety.", 3)
+    end
+end
+
+local function enforceSafePlatformBounds(humanoidRootPart)
+    if not safePlatform or not humanoidRootPart then return end
+    local pos = humanoidRootPart.Position
+    local platformPos = safePlatform.Position
+    local halfX = safePlatform.Size.X * 0.5 - 3
+    local halfZ = safePlatform.Size.Z * 0.5 - 3
+    local minY = platformPos.Y + safePlatform.Size.Y * 0.5 + 3
+    local clampedX = math.clamp(pos.X, platformPos.X - halfX, platformPos.X + halfX)
+    local clampedZ = math.clamp(pos.Z, platformPos.Z - halfZ, platformPos.Z + halfZ)
+    local clampedY = math.max(pos.Y, minY)
+    if clampedX ~= pos.X or clampedY ~= pos.Y or clampedZ ~= pos.Z then
+        local rotationOnly = humanoidRootPart.CFrame - pos
+        humanoidRootPart.CFrame = CFrame.new(clampedX, clampedY, clampedZ) * rotationOnly
+        if clampedY ~= pos.Y then
+            local velocity = humanoidRootPart.AssemblyLinearVelocity
+            humanoidRootPart.AssemblyLinearVelocity = Vector3.new(velocity.X, math.max(velocity.Y, 0), velocity.Z)
+        end
+    end
+end
+local function checkVoid(humanoidRootPart)
+    if not voidCheckOn or not humanoidRootPart then return end
+    local pos = humanoidRootPart.Position
+    rememberVoidSafePoint(humanoidRootPart, false)
+    local baseY = voidSafeHeight or pos.Y
+    if pos.Y > baseY - voidRescueOffset then return false end
+    local skippedTarget = currentTarget
+    if skippedTarget then
+        voidDangerTargets[skippedTarget] = tick() + voidDangerCooldown
+        currentTarget = nil
+        clearHighlight()
+        if switchVoidTarget(skippedTarget) then
+            local targetRoot = currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                teleportToPosition(targetRoot, humanoidRootPart)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+            end
+            return true
+        end
+    end
+    local targetCFrame = nil
+    if safePlatform then
+        targetCFrame = safePlatform.CFrame + Vector3.new(0, 5, 0)
+    elseif lastVoidSafeCFrame then
+        local safePos = lastVoidSafeCFrame.Position
+        targetCFrame = CFrame.new(safePos.X, baseY + 5, safePos.Z) * (lastVoidSafeCFrame - safePos)
+    elseif voidSpawnCFrame then
+        local spawnPos = voidSpawnCFrame.Position
+        targetCFrame = CFrame.new(spawnPos.X, baseY + 5, spawnPos.Z) * (voidSpawnCFrame - spawnPos)
+    end
+    if targetCFrame then
+        humanoidRootPart.CFrame = targetCFrame
+        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+        if tick() - lastVoidNotify > 2 then
+            notify("Void detected! Returned to safe height.", 2)
+            lastVoidNotify = tick()
+        end
+        return true
+    end
+    return false
+end
+updateSafetyStatus = function()
+    if not safetyStatusBox then return end
+    local safeText = "Waiting"
+    if safePlatform then
+        safeText = "Safe Platform"
+    elseif lastVoidSafeCFrame then
+        local pos = lastVoidSafeCFrame.Position
+        safeText = string.format("X %.0f | Y %.0f | Z %.0f", pos.X, pos.Y, pos.Z)
+    elseif voidSpawnCFrame then
+        local pos = voidSpawnCFrame.Position
+        safeText = string.format("Spawn X %.0f | Y %.0f | Z %.0f", pos.X, pos.Y, pos.Z)
+    end
+    local dangerCount = 0
+    for player, expires in pairs(voidDangerTargets) do
+        if expires > tick() then
+            dangerCount = dangerCount + 1
+        else
+            voidDangerTargets[player] = nil
+        end
+    end
+    safetyStatusBox.Text = table.concat({
+        "Anti-void status: " .. (voidCheckOn and "ON" or "OFF"),
+        "Current safe point: " .. safeText,
+        "Target protection: " .. (dangerCount > 0 and (dangerCount .. " skipped") or "Active"),
+        "Safe Platform: " .. (safePlatform and (manualSafeMode and "MANUAL ON" or "ON") or "OFF")
+    }, "\n")
 end
 local function destroySafeZoneGui()
     if safeZoneGui and safeZoneGui.Parent then
@@ -2132,8 +1796,10 @@ local function createSafeZoneGui()
     button.MouseButton1Click:Connect(function()
         if safePlatform then
             removeSafePlatform()
+            notify("Safe Zone deactivated", 2)
         else
-            createSafePlatform()
+            createSafePlatform(true)   -- tạo thủ công
+            notify("Safe Zone manually activated! (Stay on platform)", 2)
         end
     end)
 
@@ -2143,19 +1809,21 @@ function removeSafePlatform()
     if safePlatform then
         safePlatform:Destroy()
         safePlatform = nil
+        manualSafeMode = false   -- reset cờ
         local character = LocalPlayer.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid and (humanoid.Health / humanoid.MaxHealth) > 0.8 then
-                autoOn = wasAutoKillOn
-                autoSelectedOn = wasAutoKillOn
-                multiOn = wasAutoKillOn
+                autoOn = savedSafeZoneModes.auto
+                autoSelectedOn = savedSafeZoneModes.selected
+                multiOn = savedSafeZoneModes.multi
                 Config.AutoOn = autoOn
                 Config.AutoSelectedOn = autoSelectedOn
                 Config.MultiOn = multiOn
                 SaveConfig()
                 applyLang()
-                notify("Safe Zone deactivated! Auto Kill "..(wasAutoKillOn and "enabled" or "disabled")..".", 3)
+                local restoredAny = autoOn or autoSelectedOn or multiOn
+                notify("Safe Zone deactivated! Auto Kill "..(restoredAny and "restored" or "disabled")..".", 3)
             else
                 notify("Safe Zone deactivated! Health too low for Auto Kill.", 3)
             end
@@ -2167,17 +1835,16 @@ startMain = function()
         if content then
             content.Visible = not minimized
         end
+        if tabBar then
+            tabBar.Visible = not minimized
+        end
         return
     end
     mainStarted = true
     loadLang()
     applyLang()
-    connectBlackFlashWebSocket(false)
-    syncBlackFlashUiState()
-    updateReadyReceiveButton()
-    if not blackFlash.partnerName then
-        setBlackFlashStatus("Idle")
-    end
+    setActiveTab(activeTab)
+    recordUpdateNotice()
     refreshPlayerList()
     updateSelectedBtnsText()
     if safeZoneOn then
@@ -2186,7 +1853,11 @@ startMain = function()
     if content then
         content.Visible = not minimized
     end
+    if tabBar then
+        tabBar.Visible = not minimized
+    end
 end
+
 local PlaceId = game.PlaceId
 local function getServers(minPlayers, maxPlayers)
     local servers = {}
@@ -2245,12 +1916,12 @@ local function hopServer()
         end
     end
 end
+
 -- Player button creation
 local function createPlayerButton(player, yPosition)
     if playerButtons[player] then
         playerButtons[player]:Destroy()
     end
-   
     local button = Instance.new("TextButton")
     button.Name = player.Name
     button.Size = UDim2.new(1, -10, 0, 36)
@@ -2263,6 +1934,8 @@ local function createPlayerButton(player, yPosition)
     button.TextSize = 13
     button.TextColor3 = isSel and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(240,240,240)
     button.AutoButtonColor = false
+    button.Active = true
+    button.ZIndex = 10
     button.Parent = UI.PlayerList
     if isSel then
         local neonStroke = Instance.new("UIStroke", button)
@@ -2270,6 +1943,7 @@ local function createPlayerButton(player, yPosition)
         neonStroke.Color = Color3.fromRGB(255, 0, 0)
         neonStroke.Transparency = 0.4
         neonStroke.Thickness = 2.5
+        neonStroke:SetAttribute("PulseRunning", true)
         spawn(function()
             while button.Parent do
                 TweenService:Create(neonStroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.7}):Play()
@@ -2283,7 +1957,6 @@ local function createPlayerButton(player, yPosition)
     statusIndicator.Position = UDim2.new(1, -14, 0.5, -4)
     statusIndicator.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     statusIndicator.BorderSizePixel = 0
-   
     local function updateStatus()
         if player.Character then
             local humanoid = player.Character:FindFirstChild("Humanoid")
@@ -2314,12 +1987,11 @@ local function createPlayerButton(player, yPosition)
     playerButtons[player] = button
     return button
 end
--- Blacklist player button creation
+
 local function createBlacklistButton(player, yPosition)
     if blacklistButtons[player] then
         blacklistButtons[player]:Destroy()
     end
-   
     local button = Instance.new("TextButton")
     button.Name = player.Name
     button.Size = UDim2.new(1, -10, 0, 36)
@@ -2328,22 +2000,21 @@ local function createBlacklistButton(player, yPosition)
     button.Font = Enum.Font.Gotham
     button.TextSize = 13
     button.AutoButtonColor = false
+    button.Active = true
+    button.ZIndex = 10
     button.Parent = UI.BlacklistPlayerList
-   
     updateBlacklistButton(button, player)
     button.MouseEnter:Connect(function()
         if player.Name ~= PROTECTED_USER and not isBlacklisted(player) and not selectedBlacklistPlayers[player] then
             TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 12, 12)}):Play()
         end
     end)
-   
     button.MouseLeave:Connect(function()
         if player.Name ~= PROTECTED_USER and not isBlacklisted(player) and not selectedBlacklistPlayers[player] then
             TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 8, 8)}):Play()
         end
     end)
     button.MouseButton1Click:Connect(function()
-        -- Toggle selection highlight
         if selectedBlacklistPlayers[player] then
             selectedBlacklistPlayers[player] = nil
         else
@@ -2354,7 +2025,8 @@ local function createBlacklistButton(player, yPosition)
     blacklistButtons[player] = button
     return button
 end
-local function refreshPlayerList()
+
+refreshPlayerList = function()
     local yPosition = 0
     local visiblePlayers = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -2367,18 +2039,13 @@ local function refreshPlayerList()
                 playerButtons[player].Position = UDim2.new(0, 5, 0, yPosition)
                 local status = playerButtons[player]:FindFirstChild("StatusIndicator")
                 if status then
-                    spawn(function()
-                        local function updateStatusForButton()
-                            if player and player.Character then
-                                local humanoid = player.Character:FindFirstChild("Humanoid")
-                                if humanoid then
-                                    local targetColor = humanoid.Health <= 0 and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(30, 200, 30)
-                                    TweenService:Create(status, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor}):Play()
-                                end
-                            end
+                    if player and player.Character then
+                        local humanoid = player.Character:FindFirstChild("Humanoid")
+                        if humanoid then
+                            local targetColor = humanoid.Health <= 0 and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(30, 200, 30)
+                            TweenService:Create(status, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor}):Play()
                         end
-                        updateStatusForButton()
-                    end)
+                    end
                 end
                 local isSel = isSelected(player)
                 updateButtonColors(playerButtons[player], isSel, player.Name)
@@ -2394,12 +2061,12 @@ local function refreshPlayerList()
     end
     UI.PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
 end
+
 local function refreshBlacklistList()
     for _, button in pairs(blacklistButtons) do
         button:Destroy()
     end
     blacklistButtons = {}
-   
     local yPosition = 0
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -2409,35 +2076,27 @@ local function refreshBlacklistList()
     end
     UI.BlacklistPlayerList.CanvasSize = UDim2.new(0, 0, 0, yPosition)
 end
+
 spawn(function()
     while true do
         if autoRefreshOn then
-            if not canRunMain() then
+            if canRunMain() then
+                refreshPlayerList()
+            else
                 wait(1)
-                continue
             end
-            refreshPlayerList()
         end
         wait(5)
     end
 end)
-spawn(function()
-    while true do
-        pcall(function()
-            connectBlackFlashWebSocket(false)
-            pollBlackFlashState()
-        end)
-        task.wait(0.01)
-    end
-end)
+
 local function onCharacterAdded(char)
     if not canRunMain() then
         return
     end
     wait(1)
-    if stealthOn then
-        toggleStealth()
-    end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    rememberVoidSafePoint(root, true)
     if speedBoostOn then
         local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
@@ -2457,180 +2116,182 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 if LocalPlayer.Character then
     onCharacterAdded(LocalPlayer.Character)
 end
--- Main game loop
+
+-- Main game loop (sửa logic safe zone)
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
-        if not canRunMain() then
-            continue
-        end
-        if tick() - lastSpeedUpdate > speedUpdateRate then
-            speedBoostStep()
-            lastSpeedUpdate = tick()
-        end
-        if serverHopOn and tick() - lastServerHopCheck > serverHopCooldown then
-            lastServerHopCheck = tick()
-            local playerCount = #Players:GetPlayers()
-            if playerCount < 5 then
-                notify("Server has only "..playerCount.." players, hopping...", 2)
-                hopServer()
+        if canRunMain() then
+            if tick() - lastSpeedUpdate > speedUpdateRate then
+                speedBoostStep()
+                updateSafetyStatus()
+                lastSpeedUpdate = tick()
             end
-        end
-        if safeZoneOn then
-            local character = LocalPlayer.Character
-            if character then
-                local humanoid = character:FindFirstChild("Humanoid")
-                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-                if humanoid and humanoid.Health > 0 and humanoidRootPart then
-                    local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
-                    if healthPercent < 35 and not safePlatform then
-                        createSafePlatform()
-                    elseif healthPercent > 80 and safePlatform then
-                        removeSafePlatform()
-                    end
-                    if safePlatform and (humanoidRootPart.Position - safePlatform.Position).Magnitude > 10 then
-                        humanoidRootPart.CFrame = safePlatform.CFrame + Vector3.new(0, 5, 0)
+            if serverHopOn and tick() - lastServerHopCheck > serverHopCooldown then
+                lastServerHopCheck = tick()
+                local playerCount = #Players:GetPlayers()
+                if playerCount < 5 then
+                    notify("Server has only "..playerCount.." players, hopping...", 2)
+                    hopServer()
+                end
+            end
+            if safeZoneOn then
+                local character = LocalPlayer.Character
+                if character then
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                    if humanoid and humanoid.Health > 0 and humanoidRootPart then
+                        local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
+                        -- Tự động tạo platform khi máu thấp (không phải manual)
+                        if healthPercent < 35 and not safePlatform then
+                            createSafePlatform(false)
+                        -- Chỉ tự động xóa khi platform không phải manual và máu > 80%
+                        elseif healthPercent > 80 and safePlatform and not manualSafeMode then
+                            removeSafePlatform()
+                        end
+                        enforceSafePlatformBounds(humanoidRootPart)
                     end
                 end
             end
-        end
-        local char = LocalPlayer.Character
-        local humanoid = char and char:FindFirstChild("Humanoid")
-        if not (humanoid and humanoid.Health > 0) then
-            RunService.Heartbeat:Wait()
-            continue
-        end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if multiOn and #selectedTargets < 2 then
-            multiOn = false
-            Config.MultiOn = false
-            SaveConfig()
-            applyLang()
-            notify("Multi mode disabled - Less than 2 targets left. Hoàn tất kill! 💀", 2)
-            clearHighlight()
-            currentTarget = nil
-            currentMultiIndex = 1
-        end
-        if autoOn and not safePlatform then
-            if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 or isBlacklisted(currentTarget) then
-                currentTarget = chooseWeakest()
-                if currentTarget then
-                    notify("Selected weakest: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 1.8)
-                    makeHighlight(currentTarget)
-                    lastNoTargetNotify = 0
+            local char = LocalPlayer.Character
+            local humanoid = char and char:FindFirstChild("Humanoid")
+            if not (humanoid and humanoid.Health > 0) then
+                -- do nothing, skip rest
+            else
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if checkVoid(hrp) then
+                    -- void handled
                 else
-                    if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
-                        notify("No valid targets found.", 1.8)
-                        lastNoTargetNotify = tick()
-                    end
-                    clearHighlight()
-                end
-            else
-                local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
-                if tick() - lastAttack > attackRate then
-                    teleportToPosition(targetRoot, hrp)
-                    spamAttack()
-                    lastAttack = tick()
-                end
-                if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot then
-                    teleportToPosition(targetRoot, hrp)
-                    lastPositionUpdate = tick()
-                end
-                if tick() - lastFace > faceRate then
-                    faceTargetStep()
-                    lastFace = tick()
-                end
-            end
-        end
-        if autoSelectedOn and not safePlatform and #selectedTargets == 1 then
-            currentTarget = selectedTargets[1]
-            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 and not isBlacklisted(currentTarget) then
-                local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
-                if tick() - lastAttack > attackRate then
-                    teleportToPosition(targetRoot, hrp)
-                    spamAttack()
-                    lastAttack = tick()
-                end
-                if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot then
-                    teleportToPosition(targetRoot, hrp)
-                    lastPositionUpdate = tick()
-                end
-                if tick() - lastFace > faceRate then
-                    faceTargetStep()
-                    lastFace = tick()
-                end
-                makeHighlight(currentTarget)
-            else
-                if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
-                    notify("Single target invalid. Mode paused.", 1.8)
-                    lastNoTargetNotify = tick()
-                end
-                clearHighlight()
-            end
-        end
-        if multiOn and not safePlatform and #selectedTargets >= 2 then
-            if tick() - lastTargetCheck > targetCheckRate then
-                local target = selectedTargets[currentMultiIndex]
-                local isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target)
-                if not isValid then
-                    local oldIndex = currentMultiIndex
-                    local oldTarget = target
-                    local targetName = target and target.Name or "Unknown"
-                    local attempts = 0
-                    repeat
-                        currentMultiIndex = math.fmod(currentMultiIndex, #selectedTargets) + 1
-                        target = selectedTargets[currentMultiIndex]
-                        attempts = attempts + 1
-                        isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target)
-                    until isValid or attempts >= #selectedTargets
-                    lastTargetCheck = tick()
-                    local switched = false
-                    if attempts >= #selectedTargets then
-                        currentMultiIndex = 1
-                        currentTarget = nil
+                    if multiOn and #selectedTargets < 2 then
+                        multiOn = false
+                        Config.MultiOn = false
+                        SaveConfig()
+                        applyLang()
+                        notify("Multi mode disabled - Less than 2 targets left. Hoàn tất kill! 💀", 2)
                         clearHighlight()
-                        if tick() - lastSwitchNotify > switchNotifyCooldown then
-                            notify("All targets dead! Waiting for respawn & cycle back to #1... 🔄💀", 3)
-                            lastSwitchNotify = tick()
+                        currentTarget = nil
+                        currentMultiIndex = 1
+                    end
+                    if autoOn and not safePlatform then
+                        if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("Humanoid") or currentTarget.Character:FindFirstChild("Humanoid").Health <= 0 or isBlacklisted(currentTarget) or isVoidDangerTarget(currentTarget) then
+                            currentTarget = chooseWeakest()
+                            if currentTarget then
+                                notify("Selected weakest: "..currentTarget.Name.." ["..positionMode.."]", 1.8)
+                                makeHighlight(currentTarget)
+                                lastNoTargetNotify = 0
+                            else
+                                if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
+                                    notify("No valid targets found.", 1.8)
+                                    lastNoTargetNotify = tick()
+                                end
+                                clearHighlight()
+                            end
+                        else
+                            local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+                            if tick() - lastAttack > attackRate then
+                                teleportToPosition(targetRoot, hrp)
+                                spamAttack()
+                                lastAttack = tick()
+                            end
+                            if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot then
+                                teleportToPosition(targetRoot, hrp)
+                                lastPositionUpdate = tick()
+                            end
+                            if tick() - lastFace > faceRate then
+                                faceTargetStep()
+                                lastFace = tick()
+                            end
                         end
-                    else
-                        currentTarget = target
-                        makeHighlight(currentTarget, currentMultiIndex)
-                        switched = true
-                        if tick() - lastSwitchNotify > switchNotifyCooldown then
-                            notify("Target '" .. targetName .. "' chết. Tiếp theo #" .. currentMultiIndex .. " (" .. #selectedTargets .. " total) 🔄", 1.5)
-                            lastSwitchNotify = tick()
+                    end
+                    if autoSelectedOn and not safePlatform and #selectedTargets == 1 then
+                        currentTarget = selectedTargets[1]
+                        if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character:FindFirstChild("Humanoid").Health > 0 and not isBlacklisted(currentTarget) and not isVoidDangerTarget(currentTarget) then
+                            local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+                            if tick() - lastAttack > attackRate then
+                                teleportToPosition(targetRoot, hrp)
+                                spamAttack()
+                                lastAttack = tick()
+                            end
+                            if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate and targetRoot then
+                                teleportToPosition(targetRoot, hrp)
+                                lastPositionUpdate = tick()
+                            end
+                            if tick() - lastFace > faceRate then
+                                faceTargetStep()
+                                lastFace = tick()
+                            end
+                            makeHighlight(currentTarget)
+                        else
+                            if tick() - lastNoTargetNotify > noTargetNotifyCooldown then
+                                notify("Single target invalid. Mode paused.", 1.8)
+                                lastNoTargetNotify = tick()
+                            end
+                            clearHighlight()
                         end
                     end
-                else
-                    currentTarget = target
-                    makeHighlight(currentTarget, currentMultiIndex)
-                    lastTargetCheck = tick()
-                end
-            end
-            if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character.Humanoid.Health > 0 and not isBlacklisted(currentTarget) then
-                local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
-                if targetRoot and hrp then
-                    if tick() - lastAttack > attackRate then
-                        teleportToPosition(targetRoot, hrp)
-                        spamAttack()
-                        lastAttack = tick()
+                    if multiOn and not safePlatform and #selectedTargets >= 2 then
+                        if tick() - lastTargetCheck > targetCheckRate then
+                            local target = selectedTargets[currentMultiIndex]
+                            local isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target) and not isVoidDangerTarget(target)
+                            if not isValid then
+                                local targetName = target and target.Name or "Unknown"
+                                local attempts = 0
+                                repeat
+                                    currentMultiIndex = math.fmod(currentMultiIndex, #selectedTargets) + 1
+                                    target = selectedTargets[currentMultiIndex]
+                                    attempts = attempts + 1
+                                    isValid = target and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 and not isBlacklisted(target) and not isVoidDangerTarget(target)
+                                until isValid or attempts >= #selectedTargets
+                                lastTargetCheck = tick()
+                                if attempts >= #selectedTargets then
+                                    currentMultiIndex = 1
+                                    currentTarget = nil
+                                    clearHighlight()
+                                    if tick() - lastSwitchNotify > switchNotifyCooldown then
+                                        notify("All targets dead! Waiting for respawn & cycle back to #1... 🔄💀", 3)
+                                        lastSwitchNotify = tick()
+                                    end
+                                else
+                                    currentTarget = target
+                                    makeHighlight(currentTarget, currentMultiIndex)
+                                    if tick() - lastSwitchNotify > switchNotifyCooldown then
+                                        notify("Target '" .. targetName .. "' chết. Tiếp theo #" .. currentMultiIndex .. " (" .. #selectedTargets .. " total) 🔄", 1.5)
+                                        lastSwitchNotify = tick()
+                                    end
+                                end
+                            else
+                                currentTarget = target
+                                makeHighlight(currentTarget, currentMultiIndex)
+                                lastTargetCheck = tick()
+                            end
+                        end
+                        if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Humanoid") and currentTarget.Character.Humanoid.Health > 0 and not isBlacklisted(currentTarget) and not isVoidDangerTarget(currentTarget) then
+                            local targetRoot = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+                            if targetRoot and hrp then
+                                if tick() - lastAttack > attackRate then
+                                    teleportToPosition(targetRoot, hrp)
+                                    spamAttack()
+                                    lastAttack = tick()
+                                end
+                                if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate then
+                                    teleportToPosition(targetRoot, hrp)
+                                    lastPositionUpdate = tick()
+                                end
+                            end
+                            if tick() - lastFace > faceRate then
+                                faceTargetStep()
+                                lastFace = tick()
+                            end
+                        else
+                            lastTargetCheck = 0
+                        end
                     end
-                    if positionMode == "Circle" and tick() - lastPositionUpdate > positionRate then
-                        teleportToPosition(targetRoot, hrp)
-                        lastPositionUpdate = tick()
-                    end
                 end
-                if tick() - lastFace > faceRate then
-                    faceTargetStep()
-                    lastFace = tick()
-                end
-            else
-                lastTargetCheck = 0
             end
         end
     end
 end)
+
 -- Button handlers
 UI.AutoBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
@@ -2649,7 +2310,7 @@ UI.AutoBtn.MouseButton1Click:Connect(function()
         Config.MultiOn = false
         SaveConfig()
         applyLang()
-        notify("Auto Kill Random enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Selecting target...", 2)
+        notify("Auto Kill Random enabled ["..positionMode.."]. Selecting target...", 2)
         currentTarget = chooseRandom()
         if currentTarget then
             notify("Target: "..currentTarget.Name, 2)
@@ -2681,7 +2342,7 @@ UI.AutoSelectedBtn.MouseButton1Click:Connect(function()
             SaveConfig()
             applyLang()
             currentTarget = selectedTargets[1]
-            notify("Auto Kill Single enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Target: "..currentTarget.Name, 2)
+            notify("Auto Kill Single enabled ["..positionMode.."]. Target: "..currentTarget.Name, 2)
             makeHighlight(currentTarget)
         else
             notify("Auto Kill Single disabled", 1.5)
@@ -2713,7 +2374,7 @@ UI.MultiSelectedBtn.MouseButton1Click:Connect(function()
             currentMultiIndex = 1
             lastTargetCheck = 0
             currentTarget = selectedTargets[1]
-            notify("Multi Kill enabled ["..positionMode.."]"..(stealthOn and " [STEALTH]" or "")..". Sequential mode ("..#selectedTargets.." targets)", 2.5)
+            notify("Multi Kill enabled ["..positionMode.."]. Sequential mode ("..#selectedTargets.." targets)", 2.5)
             makeHighlight(currentTarget, currentMultiIndex)
         else
             notify("Multi Kill disabled", 1.5)
@@ -2741,7 +2402,7 @@ UI.ChangePlayerBtn.MouseButton1Click:Connect(function()
     end
     if #players > 0 then
         currentTarget = players[math.random(1, #players)]
-        notify("Changed target to: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
+        notify("Changed target to: "..currentTarget.Name.." ["..positionMode.."]", 2)
         makeHighlight(currentTarget)
         refreshPlayerList()
         if autoOn or autoSelectedOn or multiOn then
@@ -2789,14 +2450,6 @@ UI.PositionModeBtn.MouseButton1Click:Connect(function()
             teleportToPosition(targetRoot, hrp)
         end
     end
-end)
-UI.StealthBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    stealthOn = not stealthOn
-    Config.StealthOn = stealthOn
-    SaveConfig()
-    applyLang()
-    toggleStealth()
 end)
 UI.SpeedBoostBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
@@ -2854,7 +2507,7 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid and (humanoid.Health / humanoid.MaxHealth) < 0.35 then
-                createSafePlatform()
+                createSafePlatform(false)
             end
         end
     else
@@ -2865,55 +2518,20 @@ UI.SafeZoneBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
-UI.BlackFlashBtn.MouseButton1Click:Connect(function()
+UI.VoidCheckBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
-    UI.BlackFlashFrame.Visible = not UI.BlackFlashFrame.Visible
-    if UI.BlackFlashFrame.Visible then
-        connectBlackFlashWebSocket(false)
-        syncBlackFlashUiState()
-        if #selectedTargets >= 1 and selectedTargets[1] then
-            UI.BlackFlashTargetBox.Text = selectedTargets[1].Name
-        elseif blackFlash.partnerName then
-            UI.BlackFlashTargetBox.Text = blackFlash.partnerName
-        end
-    end
-end)
-UI.BlackFlashCloseBtn.MouseButton1Click:Connect(function()
-    UI.BlackFlashFrame.Visible = false
-end)
-UI.BlackFlashSendBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    sendBlackFlashInvite()
-end)
-UI.BlackFlashReadyReceiveBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    blackFlash.receiveReady = not blackFlash.receiveReady
-    if blackFlash.receiveReady then
-        connectBlackFlashWebSocket(true)
-    end
-    updateReadyReceiveButton()
-    blackFlash.lastPoll = 0
-    if blackFlash.receiveReady then
-        setBlackFlashStatus("Ready to receive invite (checking every 0.01s)")
-        notify("Ready Receive ON", 1.5)
+    voidCheckOn = not voidCheckOn
+    Config.VoidCheckOn = voidCheckOn
+    SaveConfig()
+    applyLang()
+    if voidCheckOn then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        lastVoidSafeCFrame = hrp and hrp.CFrame or lastVoidSafeCFrame
+        notify("Void Check enabled", 1.5)
     else
-        if not blackFlash.inviteId and not blackFlash.incomingInviteId then
-            setBlackFlashStatus("Idle")
-        end
-        notify("Ready Receive OFF", 1.5)
+        notify("Void Check disabled", 1.5)
     end
-end)
-UI.BlackFlashAcceptBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    respondBlackFlashInvite(true)
-end)
-UI.BlackFlashRejectBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    respondBlackFlashInvite(false)
-end)
-UI.BlackFlashStartBtn.MouseButton1Click:Connect(function()
-    if not canRunMain() then return end
-    setBlackFlashReady()
 end)
 UI.RefreshBtn.MouseButton1Click:Connect(function()
     if not canRunMain() then return end
@@ -2933,12 +2551,10 @@ UI.AutoRefreshToggle.MouseButton1Click:Connect(function()
         notify("Auto Refresh disabled", 1.5)
     end
 end)
+
 Players.PlayerRemoving:Connect(function(p)
     if not canRunMain() then return end
-    if blackFlash.partnerName == p.Name or blackFlash.incomingFrom == p.Name then
-        resetBlackFlashState("Partner left server")
-        notify("BlackFlash session reset: partner left", 2)
-    end
+    voidDangerTargets[p] = nil
     if currentTarget == p then
         currentTarget = nil
         clearHighlight()
@@ -2962,7 +2578,7 @@ Players.PlayerRemoving:Connect(function(p)
             if removedIndex < currentMultiIndex then
                 currentMultiIndex = currentMultiIndex - 1
             elseif removedIndex == currentMultiIndex then
-                currentMultiIndex = math.fmod(currentMultiIndex - 1, #selectedTargets) + 1
+                currentMultiIndex = (#selectedTargets > 0) and (math.fmod(currentMultiIndex - 1, #selectedTargets) + 1) or 1
             end
             if currentMultiIndex > #selectedTargets then currentMultiIndex = 1 end
             lastTargetCheck = 0
@@ -3006,13 +2622,14 @@ Players.PlayerRemoving:Connect(function(p)
             wait(1)
             currentTarget = chooseWeakest()
             if currentTarget then
-                notify("New target: "..currentTarget.Name.." ["..positionMode.."]"..(stealthOn and " [STEALTH]" or ""), 2)
+                notify("New target: "..currentTarget.Name.." ["..positionMode.."]", 2)
                 makeHighlight(currentTarget)
             end
         end)
     end
     refreshPlayerList()
 end)
+
 Players.PlayerAdded:Connect(function(p)
     wait(2)
     if canRunMain() then
@@ -3025,6 +2642,7 @@ Players.PlayerAdded:Connect(function(p)
         checkComplimentTarget()
     end
 end)
+
 spawn(function()
     while true do
         for i,child in ipairs(UI.Crack:GetChildren()) do
@@ -3035,35 +2653,32 @@ spawn(function()
         wait(1.2)
     end
 end)
+
 spawn(function()
     while true do
--- Animation for glow effect (tiếp tục phần còn lại)
         TweenService:Create(UI.Glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.95}):Play()
         wait(1.2)
     end
 end)
 
--- Initialize
 checkComplimentTarget()
 if mainReady then
     startMain()
 end
 
--- Additional keybind for manual server hop
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if not canRunMain() then return end
     if input.KeyCode == Enum.KeyCode.F8 then
         hopServer()
     elseif input.KeyCode == Enum.KeyCode.F9 then
-        -- Emergency safe zone toggle
         safeZoneOn = not safeZoneOn
         Config.SafeZoneOn = safeZoneOn
         SaveConfig()
         applyLang()
         if safeZoneOn then
             createSafeZoneGui()
-            createSafePlatform()
+            createSafePlatform(false)
             notify("Emergency Safe Zone Activated!", 2)
         else
             destroySafeZoneGui()
@@ -3073,16 +2688,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Global functions for external use
 getgenv().LuexHopServer = hopServer
 getgenv().LuexToggleAuto = function()
     UI.AutoBtn.MouseButton1Click()
 end
 getgenv().LuexToggleMulti = function()
     UI.MultiSelectedBtn.MouseButton1Click()
-end
-getgenv().LuexToggleStealth = function()
-    UI.StealthBtn.MouseButton1Click()
 end
 getgenv().LuexGetTarget = function()
     return currentTarget and currentTarget.Name or "No target"
@@ -3107,18 +2718,15 @@ getgenv().LuexSelectTarget = function(playerName)
     return false
 end
 
--- Auto-save configuration when leaving
 game:BindToClose(function()
     SaveConfig()
     notify("Config saved. Goodbye!", 1)
     wait(0.5)
 end)
 
--- Final notification
 print("Luex ULTRA v3.2: Blacklist Protection + Sequential Multi loaded - Cực xịn cực mạnh xịn sò 😈💥")
 notify("Luex ULTRA v3.2 Loaded! Protected user: " .. PROTECTED_USER .. " | Blacklist enabled!", 4)
 
--- Check if protected user is in game and notify
 spawn(function()
     wait(3)
     for _, player in pairs(Players:GetPlayers()) do
