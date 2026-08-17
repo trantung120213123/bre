@@ -713,11 +713,11 @@ local lastVoidSafeCFrame = nil
 local lastVoidNotify = 0
 local voidDangerTargets = {}
 local voidDangerCooldown = 6
--- Tăng ngưỡng anti-void sâu hơn (bạn có thể chỉnh 70-120)
-local voidWarnOffset = 60
-local voidRescueOffset = 80
+-- Đã giảm ngưỡng để không bị kéo lên quá sớm
+local voidWarnOffset = 100   -- bỏ qua target khi rơi sâu 40 đơn vị
+local voidRescueOffset = 55 -- cứu bạn khi rơi sâu 55 đơn vị
 local removeSafePlatform
-local manualSafeMode = false   -- cờ để biết platform tạo thủ công
+local manualSafeMode = false
 local complimentDialog = nil
 local complimentVisible = false
 local mainReady = true
@@ -1573,22 +1573,28 @@ spamAttack = function()
     if not currentTarget or isBlacklisted(currentTarget) or not LocalPlayer.Character then return end
     local remote = LocalPlayer.Character:FindFirstChild("Communicate")
     if not remote then return end
+
+    -- Gửi phím G (giữ nguyên)
     remote:FireServer({
         MoveDirection = Vector3.zero,
         Goal = "KeyPress",
         Key = Enum.KeyCode.G
     })
-    local args = {
-        {
-            Goal = "KeyPress",
-            Key = Enum.KeyCode.Q
-        }
-    }
-    remote:FireServer(unpack(args))
+
+    -- Gửi phím Q giống hệt cấu trúc của G
+    remote:FireServer({
+        MoveDirection = Vector3.zero,
+        Goal = "KeyPress",
+        Key = Enum.KeyCode.Q
+    })
+
+    -- Click chuột trái
     remote:FireServer({
         Goal = "LeftClick",
         Mobile = true
     })
+
+    -- Quét tool
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, toolName in ipairs(toolList) do
@@ -1603,20 +1609,16 @@ spamAttack = function()
     end
 end
 
--- Sửa hàm createSafePlatform để hỗ trợ manual
 local function createSafePlatform(manual)
     if safePlatform then return end
-    manualSafeMode = manual or false   -- ghi nhớ nếu tạo bằng tay
-
+    manualSafeMode = manual or false
     local character = LocalPlayer.Character
     if not character then return end
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then return end
-
     savedSafeZoneModes.auto = autoOn
     savedSafeZoneModes.selected = autoSelectedOn
     savedSafeZoneModes.multi = multiOn
-
     autoOn = false
     autoSelectedOn = false
     multiOn = false
@@ -1625,7 +1627,6 @@ local function createSafePlatform(manual)
     Config.MultiOn = false
     SaveConfig()
     applyLang()
-
     safePlatform = Instance.new("Part")
     safePlatform.Name = "LuexSafePlatform"
     safePlatform.Size = Vector3.new(1000, 1, 1000)
@@ -1635,15 +1636,13 @@ local function createSafePlatform(manual)
     safePlatform.Transparency = 0.5
     safePlatform.Color = Color3.fromRGB(255, 0, 0)
     safePlatform.Parent = workspace
-
     humanoidRootPart.CFrame = safePlatform.CFrame + Vector3.new(0, 5, 0)
     if manual then
-        notify("Safe Zone manually activated! (Auto-removal disabled)", 3)
+        notify("Safe Zone activated manually (bypass auto removal)!", 3)
     else
         notify("Safe Zone activated! Teleported to safety.", 3)
     end
 end
-
 local function enforceSafePlatformBounds(humanoidRootPart)
     if not safePlatform or not humanoidRootPart then return end
     local pos = humanoidRootPart.Position
@@ -1708,7 +1707,7 @@ updateSafetyStatus = function()
     if not safetyStatusBox then return end
     local safeText = "Waiting"
     if safePlatform then
-        safeText = "Safe Platform"
+        safeText = "Safe Platform" .. (manualSafeMode and " (MANUAL)" or "")
     elseif lastVoidSafeCFrame then
         local pos = lastVoidSafeCFrame.Position
         safeText = string.format("X %.0f | Y %.0f | Z %.0f", pos.X, pos.Y, pos.Z)
@@ -1728,7 +1727,7 @@ updateSafetyStatus = function()
         "Anti-void status: " .. (voidCheckOn and "ON" or "OFF"),
         "Current safe point: " .. safeText,
         "Target protection: " .. (dangerCount > 0 and (dangerCount .. " skipped") or "Active"),
-        "Safe Platform: " .. (safePlatform and (manualSafeMode and "MANUAL ON" or "ON") or "OFF")
+        "Safe Platform: " .. (safePlatform and (manualSafeMode and "🔒 MANUAL" or "AUTO") or "OFF")
     }, "\n")
 end
 local function destroySafeZoneGui()
@@ -1798,8 +1797,8 @@ local function createSafeZoneGui()
             removeSafePlatform()
             notify("Safe Zone deactivated", 2)
         else
-            createSafePlatform(true)   -- tạo thủ công
-            notify("Safe Zone manually activated! (Stay on platform)", 2)
+            createSafePlatform(true)
+            notify("Safe Zone activated manually (bypass auto removal)!", 2)
         end
     end)
 
@@ -1809,11 +1808,11 @@ function removeSafePlatform()
     if safePlatform then
         safePlatform:Destroy()
         safePlatform = nil
-        manualSafeMode = false   -- reset cờ
+        manualSafeMode = false
         local character = LocalPlayer.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid and (humanoid.Health / humanoid.MaxHealth) > 0.8 then
+            if humanoid then
                 autoOn = savedSafeZoneModes.auto
                 autoSelectedOn = savedSafeZoneModes.selected
                 multiOn = savedSafeZoneModes.multi
@@ -1825,7 +1824,7 @@ function removeSafePlatform()
                 local restoredAny = autoOn or autoSelectedOn or multiOn
                 notify("Safe Zone deactivated! Auto Kill "..(restoredAny and "restored" or "disabled")..".", 3)
             else
-                notify("Safe Zone deactivated! Health too low for Auto Kill.", 3)
+                notify("Safe Zone deactivated!", 3)
             end
         end
     end
@@ -2091,6 +2090,10 @@ spawn(function()
 end)
 
 local function onCharacterAdded(char)
+    local player = Players:GetPlayerFromCharacter(char)
+    if player then
+        voidDangerTargets[player] = nil
+    end
     if not canRunMain() then
         return
     end
@@ -2117,7 +2120,6 @@ if LocalPlayer.Character then
     onCharacterAdded(LocalPlayer.Character)
 end
 
--- Main game loop (sửa logic safe zone)
 spawn(function()
     while true do
         RunService.Heartbeat:Wait()
@@ -2142,10 +2144,8 @@ spawn(function()
                     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
                     if humanoid and humanoid.Health > 0 and humanoidRootPart then
                         local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
-                        -- Tự động tạo platform khi máu thấp (không phải manual)
                         if healthPercent < 35 and not safePlatform then
                             createSafePlatform(false)
-                        -- Chỉ tự động xóa khi platform không phải manual và máu > 80%
                         elseif healthPercent > 80 and safePlatform and not manualSafeMode then
                             removeSafePlatform()
                         end
@@ -2156,7 +2156,7 @@ spawn(function()
             local char = LocalPlayer.Character
             local humanoid = char and char:FindFirstChild("Humanoid")
             if not (humanoid and humanoid.Health > 0) then
-                -- do nothing, skip rest
+                -- skip processing
             else
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 if checkVoid(hrp) then
@@ -2631,6 +2631,7 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 
 Players.PlayerAdded:Connect(function(p)
+    voidDangerTargets[p] = nil
     wait(2)
     if canRunMain() then
         refreshPlayerList()
